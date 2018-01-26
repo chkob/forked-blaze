@@ -3,7 +3,7 @@
 //  \file blaze/math/views/Band.h
 //  \brief Header file for the implementation of the Band view
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -71,7 +71,7 @@
 #include <blaze/math/views/Forward.h>
 #include <blaze/math/views/subvector/SubvectorData.h>
 #include <blaze/system/TransposeFlag.h>
-#include <blaze/util/AsConst.h>
+#include <blaze/util/Assert.h>
 #include <blaze/util/DisableIf.h>
 #include <blaze/util/EnableIf.h>
 #include <blaze/util/FunctionTrace.h>
@@ -449,211 +449,6 @@ inline decltype(auto) diagonal( Matrix<MT,SO>&& matrix, RDAs... args )
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
-/*!\brief Creating a view on a specific subvector of the given band.
-// \ingroup band
-//
-// \param b The band containing the subvector.
-// \param args The optional subvector arguments.
-// \return View on the specified subvector of the band.
-//
-// This function returns an expression representing the specified subvector of the given band.
-*/
-template< AlignmentFlag AF    // Alignment flag
-        , size_t I1           // Index of the first subvector element
-        , size_t N            // Size of the subvector
-        , typename MT         // Type of the matrix
-        , bool TF             // Transpose flag
-        , bool DF             // Density flag
-        , bool MF             // Multiplication flag
-        , ptrdiff_t I2        // Band index
-        , typename... RSAs >  // Optional subvector arguments
-inline decltype(auto) subvector( Band<MT,TF,DF,MF,I2>& b, RSAs... args )
-{
-   BLAZE_FUNCTION_TRACE;
-
-   constexpr size_t row   ( ( I2 >= 0L ? 0UL : -I2 ) + I1 );
-   constexpr size_t column( ( I2 >= 0L ?  I2 : 0UL ) + I1 );
-
-   return diagonal( submatrix<AF,row,column,N,N>( b.operand(), args... ), unchecked );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Creating a view on a specific subvector of the given constant band.
-// \ingroup band
-//
-// \param b The constant band containing the subvector.
-// \param args The optional subvector arguments.
-// \return View on the specified subvector of the band.
-//
-// This function returns an expression representing the specified subvector of the given constant
-// band.
-*/
-template< AlignmentFlag AF    // Alignment flag
-        , size_t I1           // Index of the first subvector element
-        , size_t N            // Size of the subvector
-        , typename MT         // Type of the matrix
-        , bool TF             // Transpose flag
-        , bool DF             // Density flag
-        , bool MF             // Multiplication flag
-        , ptrdiff_t I2        // Band index
-        , typename... RSAs >  // Optional subvector arguments
-inline decltype(auto) subvector( const Band<MT,TF,DF,MF,I2>& b, RSAs... args )
-{
-   BLAZE_FUNCTION_TRACE;
-
-   constexpr size_t row   ( ( I2 >= 0L ? 0UL : -I2 ) + I1 );
-   constexpr size_t column( ( I2 >= 0L ?  I2 : 0UL ) + I1 );
-
-   return diagonal( submatrix<AF,row,column,N,N>( as_const( b.operand() ), args... ), unchecked );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Creating a view on a specific subvector of the given temporary band.
-// \ingroup band
-//
-// \param b The temporary band containing the subvector.
-// \param args The optional subvector arguments.
-// \return View on the specified subvector of the band.
-//
-// This function returns an expression representing the specified subvector of the given temporary
-// band.
-*/
-template< AlignmentFlag AF    // Alignment flag
-        , size_t I1           // Index of the first subvector element
-        , size_t N            // Size of the subvector
-        , typename MT         // Type of the matrix
-        , bool TF             // Transpose flag
-        , bool DF             // Density flag
-        , bool MF             // Multiplication flag
-        , ptrdiff_t I2        // Band index
-        , typename... RSAs >  // Optional subvector arguments
-inline decltype(auto) subvector( Band<MT,TF,DF,MF,I2>&& b, RSAs... args )
-{
-   BLAZE_FUNCTION_TRACE;
-
-   constexpr size_t row   ( ( I2 >= 0L ? 0UL : -I2 ) + I1 );
-   constexpr size_t column( ( I2 >= 0L ?  I2 : 0UL ) + I1 );
-
-   return diagonal( submatrix<AF,row,column,N,N>( b.operand(), args... ), unchecked );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Creating a view on a specific subvector of the given band.
-// \ingroup band
-//
-// \param b The band containing the subvector.
-// \param args The optional subvector arguments.
-// \return View on the specified subvector of the band.
-//
-// This function returns an expression representing the specified subvector of the given band.
-*/
-template< AlignmentFlag AF    // Alignment flag
-        , size_t... CSAs      // Compile time subvector arguments
-        , typename MT         // Type of the matrix
-        , bool TF             // Transpose flag
-        , bool DF             // Density flag
-        , bool MF             // Multiplication flag
-        , ptrdiff_t... CBAs   // Compile time band arguments
-        , typename... RSAs >  // Optional subvector arguments
-inline decltype(auto) subvector( Band<MT,TF,DF,MF,CBAs...>& b, RSAs... args )
-{
-   BLAZE_FUNCTION_TRACE;
-
-   const SubvectorData<CSAs...> sd( args... );
-
-   const size_t row   ( b.row() + sd.offset() );
-   const size_t column( b.column() + sd.offset() );
-
-   return diagonal( submatrix<AF>( b.operand(), row, column, sd.size(), sd.size(), args... ), unchecked );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Creating a view on a specific subvector of the given constant band.
-// \ingroup band
-//
-// \param b The constant band containing the subvector.
-// \param args The optional subvector arguments.
-// \return View on the specified subvector of the band.
-//
-// This function returns an expression representing the specified subvector of the given constant
-// band.
-*/
-template< AlignmentFlag AF    // Alignment flag
-        , size_t... CSAs      // Compile time subvector arguments
-        , typename MT         // Type of the matrix
-        , bool TF             // Transpose flag
-        , bool DF             // Density flag
-        , bool MF             // Multiplication flag
-        , ptrdiff_t... CBAs   // Compile time band arguments
-        , typename... RSAs >  // Optional subvector arguments
-inline decltype(auto) subvector( const Band<MT,TF,DF,MF,CBAs...>& b, RSAs... args )
-{
-   BLAZE_FUNCTION_TRACE;
-
-   const SubvectorData<CSAs...> sd( args... );
-
-   const size_t row   ( b.row() + sd.offset() );
-   const size_t column( b.column() + sd.offset() );
-
-   return diagonal( submatrix<AF>( as_const( b.operand() ), row, column, sd.size(), sd.size(), args... ), unchecked );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Creating a view on a specific subvector of the given temporary band.
-// \ingroup band
-//
-// \param b The temporary band containing the subvector.
-// \param args The optional subvector arguments.
-// \return View on the specified subvector of the band.
-//
-// This function returns an expression representing the specified subvector of the given temporary
-// band.
-*/
-template< AlignmentFlag AF    // Alignment flag
-        , size_t... CSAs      // Compile time subvector arguments
-        , typename MT         // Type of the matrix
-        , bool TF             // Transpose flag
-        , bool DF             // Density flag
-        , bool MF             // Multiplication flag
-        , ptrdiff_t... CBAs   // Compile time band arguments
-        , typename... RSAs >  // Optional subvector arguments
-inline decltype(auto) subvector( Band<MT,TF,DF,MF,CBAs...>&& b, RSAs... args )
-{
-   BLAZE_FUNCTION_TRACE;
-
-   const SubvectorData<CSAs...> sd( args... );
-
-   const size_t row   ( b.row() + sd.offset() );
-   const size_t column( b.column() + sd.offset() );
-
-   return diagonal( submatrix<AF>( b.operand(), row, column, sd.size(), sd.size(), args... ), unchecked );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
 /*!\brief Creating a view on a specific band of the given matrix/matrix addition.
 // \ingroup band
 //
@@ -986,6 +781,219 @@ inline decltype(auto) band( const MatTransExpr<MT>& matrix, RBAs... args )
    BLAZE_FUNCTION_TRACE;
 
    return band<-CBAs...>( (~matrix).operand(), -args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  GLOBAL RESTRUCTURING FUNCTIONS (SUBVECTOR)
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of the given band.
+// \ingroup band
+//
+// \param b The band containing the subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the band.
+//
+// This function returns an expression representing the specified subvector of the given band.
+*/
+template< AlignmentFlag AF    // Alignment flag
+        , size_t I1           // Index of the first subvector element
+        , size_t N            // Size of the subvector
+        , typename MT         // Type of the matrix
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , bool MF             // Multiplication flag
+        , ptrdiff_t I2        // Band index
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( Band<MT,TF,DF,MF,I2>& b, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr size_t row   ( ( I2 >= 0L ? 0UL : -I2 ) + I1 );
+   constexpr size_t column( ( I2 >= 0L ?  I2 : 0UL ) + I1 );
+
+   return diagonal( submatrix<AF,row,column,N,N>( b.operand(), args... ), unchecked );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of the given constant band.
+// \ingroup band
+//
+// \param b The constant band containing the subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the band.
+//
+// This function returns an expression representing the specified subvector of the given constant
+// band.
+*/
+template< AlignmentFlag AF    // Alignment flag
+        , size_t I1           // Index of the first subvector element
+        , size_t N            // Size of the subvector
+        , typename MT         // Type of the matrix
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , bool MF             // Multiplication flag
+        , ptrdiff_t I2        // Band index
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( const Band<MT,TF,DF,MF,I2>& b, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr size_t row   ( ( I2 >= 0L ? 0UL : -I2 ) + I1 );
+   constexpr size_t column( ( I2 >= 0L ?  I2 : 0UL ) + I1 );
+
+   return diagonal( submatrix<AF,row,column,N,N>( b.operand(), args... ), unchecked );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of the given temporary band.
+// \ingroup band
+//
+// \param b The temporary band containing the subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the band.
+//
+// This function returns an expression representing the specified subvector of the given temporary
+// band.
+*/
+template< AlignmentFlag AF    // Alignment flag
+        , size_t I1           // Index of the first subvector element
+        , size_t N            // Size of the subvector
+        , typename MT         // Type of the matrix
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , bool MF             // Multiplication flag
+        , ptrdiff_t I2        // Band index
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( Band<MT,TF,DF,MF,I2>&& b, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr size_t row   ( ( I2 >= 0L ? 0UL : -I2 ) + I1 );
+   constexpr size_t column( ( I2 >= 0L ?  I2 : 0UL ) + I1 );
+
+   return diagonal( submatrix<AF,row,column,N,N>( b.operand(), args... ), unchecked );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of the given band.
+// \ingroup band
+//
+// \param b The band containing the subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the band.
+//
+// This function returns an expression representing the specified subvector of the given band.
+*/
+template< AlignmentFlag AF    // Alignment flag
+        , size_t... CSAs      // Compile time subvector arguments
+        , typename MT         // Type of the matrix
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , bool MF             // Multiplication flag
+        , ptrdiff_t... CBAs   // Compile time band arguments
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( Band<MT,TF,DF,MF,CBAs...>& b, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   const SubvectorData<CSAs...> sd( args... );
+
+   const size_t row   ( b.row() + sd.offset() );
+   const size_t column( b.column() + sd.offset() );
+
+   return diagonal( submatrix<AF>( b.operand(), row, column, sd.size(), sd.size(), args... ), unchecked );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of the given constant band.
+// \ingroup band
+//
+// \param b The constant band containing the subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the band.
+//
+// This function returns an expression representing the specified subvector of the given constant
+// band.
+*/
+template< AlignmentFlag AF    // Alignment flag
+        , size_t... CSAs      // Compile time subvector arguments
+        , typename MT         // Type of the matrix
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , bool MF             // Multiplication flag
+        , ptrdiff_t... CBAs   // Compile time band arguments
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( const Band<MT,TF,DF,MF,CBAs...>& b, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   const SubvectorData<CSAs...> sd( args... );
+
+   const size_t row   ( b.row() + sd.offset() );
+   const size_t column( b.column() + sd.offset() );
+
+   return diagonal( submatrix<AF>( b.operand(), row, column, sd.size(), sd.size(), args... ), unchecked );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of the given temporary band.
+// \ingroup band
+//
+// \param b The temporary band containing the subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the band.
+//
+// This function returns an expression representing the specified subvector of the given temporary
+// band.
+*/
+template< AlignmentFlag AF    // Alignment flag
+        , size_t... CSAs      // Compile time subvector arguments
+        , typename MT         // Type of the matrix
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , bool MF             // Multiplication flag
+        , ptrdiff_t... CBAs   // Compile time band arguments
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( Band<MT,TF,DF,MF,CBAs...>&& b, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   const SubvectorData<CSAs...> sd( args... );
+
+   const size_t row   ( b.row() + sd.offset() );
+   const size_t column( b.column() + sd.offset() );
+
+   return diagonal( submatrix<AF>( b.operand(), row, column, sd.size(), sd.size(), args... ), unchecked );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1373,8 +1381,8 @@ inline bool isSame( const Band<MT1,TF,DF,MF,CBAs1...>& a,
 //
 // \param band The target band.
 // \param index The index of the element to be set.
-// \param value The value of the element to be set.
-// \return \a true in case the set operation would be successful, \a false if not.
+// \param value The value to be set to the element.
+// \return \a true in case the operation would be successful, \a false if not.
 //
 // This function must \b NOT be called explicitly! It is used internally for the performance
 // optimized evaluation of expression templates. Calling this function explicitly might result
@@ -1389,9 +1397,215 @@ template< typename MT        // Type of the matrix
         , typename ET >      // Type of the element
 inline bool trySet( const Band<MT,TF,DF,MF,CBAs...>& band, size_t index, const ET& value )
 {
-   BLAZE_INTERNAL_ASSERT( index <= band.size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index < band.size(), "Invalid vector access index" );
 
    return trySet( band.operand(), band.row()+index, band.column()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by adding to a single element of a band.
+// \ingroup band
+//
+// \param band The target band.
+// \param index The index of the element to be modified.
+// \param value The value to be added to the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT        // Type of the matrix
+        , bool TF            // Transpose flag
+        , bool DF            // Density flag
+        , bool MF            // Multiplication flag
+        , ptrdiff_t... CBAs  // Compile time band arguments
+        , typename ET >      // Type of the element
+inline bool tryAdd( const Band<MT,TF,DF,MF,CBAs...>& band, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < band.size(), "Invalid vector access index" );
+
+   return tryAdd( band.operand(), band.row()+index, band.column()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by subtracting from a single element of a band.
+// \ingroup band
+//
+// \param band The target band.
+// \param index The index of the element to be modified.
+// \param value The value to be subtracted from the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT        // Type of the matrix
+        , bool TF            // Transpose flag
+        , bool DF            // Density flag
+        , bool MF            // Multiplication flag
+        , ptrdiff_t... CBAs  // Compile time band arguments
+        , typename ET >      // Type of the element
+inline bool trySub( const Band<MT,TF,DF,MF,CBAs...>& band, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < band.size(), "Invalid vector access index" );
+
+   return trySub( band.operand(), band.row()+index, band.column()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a band.
+// \ingroup band
+//
+// \param band The target band.
+// \param index The index of the element to be modified.
+// \param value The factor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT        // Type of the matrix
+        , bool TF            // Transpose flag
+        , bool DF            // Density flag
+        , bool MF            // Multiplication flag
+        , ptrdiff_t... CBAs  // Compile time band arguments
+        , typename ET >      // Type of the element
+inline bool tryMult( const Band<MT,TF,DF,MF,CBAs...>& band, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < band.size(), "Invalid vector access index" );
+
+   return tryMult( band.operand(), band.row()+index, band.column()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a band.
+// \ingroup band
+//
+// \param band The target band.
+// \param index The index of the first element of the range to be modified.
+// \param size The number of elements of the range to be modified.
+// \param value The factor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT        // Type of the matrix
+        , bool TF            // Transpose flag
+        , bool DF            // Density flag
+        , bool MF            // Multiplication flag
+        , ptrdiff_t... CBAs  // Compile time band arguments
+        , typename ET >      // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryMult( const Band<MT,TF,DF,MF,CBAs...>& band, size_t index, size_t size, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index <= (~band).size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index + size <= (~band).size(), "Invalid range size" );
+
+   const size_t iend( index + size );
+
+   for( size_t i=index; i<iend; ++i ) {
+      if( !tryMult( band.operand(), band.row()+i, band.column()+i, value ) )
+         return false;
+   }
+
+   return true;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a band.
+// \ingroup band
+//
+// \param band The target band.
+// \param index The index of the element to be modified.
+// \param value The divisor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT        // Type of the matrix
+        , bool TF            // Transpose flag
+        , bool DF            // Density flag
+        , bool MF            // Multiplication flag
+        , ptrdiff_t... CBAs  // Compile time band arguments
+        , typename ET >      // Type of the element
+inline bool tryDiv( const Band<MT,TF,DF,MF,CBAs...>& band, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < band.size(), "Invalid vector access index" );
+
+   return tryDiv( band.operand(), band.row()+index, band.column()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a band.
+// \ingroup band
+//
+// \param band The target band.
+// \param index The index of the first element of the range to be modified.
+// \param size The number of elements of the range to be modified.
+// \param value The divisor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT        // Type of the matrix
+        , bool TF            // Transpose flag
+        , bool DF            // Density flag
+        , bool MF            // Multiplication flag
+        , ptrdiff_t... CBAs  // Compile time band arguments
+        , typename ET >      // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryDiv( const Band<MT,TF,DF,MF,CBAs...>& band, size_t index, size_t size, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index <= (~band).size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index + size <= (~band).size(), "Invalid range size" );
+
+   const size_t iend( index + size );
+
+   for( size_t i=index; i<iend; ++i ) {
+      if( !tryDiv( band.operand(), band.row()+i, band.column()+i, value ) )
+         return false;
+   }
+
+   return true;
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1422,7 +1636,7 @@ inline bool tryAssign( const Band<MT,TF,DF,MF,CBAs...>& lhs,
                        const Vector<VT,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryAssign( lhs.operand(), ~rhs, lhs.band(), lhs.row()+index, lhs.column()+index );
 }
@@ -1455,7 +1669,7 @@ inline bool tryAddAssign( const Band<MT,TF,DF,MF,CBAs...>& lhs,
                           const Vector<VT,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryAddAssign( lhs.operand(), ~rhs, lhs.band(), lhs.row()+index, lhs.column()+index );
 }
@@ -1488,7 +1702,7 @@ inline bool trySubAssign( const Band<MT,TF,DF,MF,CBAs...>& lhs,
                           const Vector<VT,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return trySubAssign( lhs.operand(), ~rhs, lhs.band(), lhs.row()+index, lhs.column()+index );
 }
@@ -1521,7 +1735,7 @@ inline bool tryMultAssign( const Band<MT,TF,DF,MF,CBAs...>& lhs,
                            const Vector<VT,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryMultAssign( lhs.operand(), ~rhs, lhs.band(), lhs.row()+index, lhs.column()+index );
 }
@@ -1554,7 +1768,7 @@ inline bool tryDivAssign( const Band<MT,TF,DF,MF,CBAs...>& lhs,
                           const Vector<VT,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryDivAssign( lhs.operand(), ~rhs, lhs.band(), lhs.row()+index, lhs.column()+index );
 }

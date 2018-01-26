@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/InitializerMatrix.h
 //  \brief Header file for the implementation of a matrix representation of an initializer list
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -240,7 +240,7 @@ class InitializerMatrix
    /*!\name Constructors */
    //@{
    explicit inline InitializerMatrix( initializer_list< initializer_list<Type> > list ) noexcept;
-   explicit inline InitializerMatrix( initializer_list< initializer_list<Type> > list, size_t n ) noexcept;
+   explicit inline InitializerMatrix( initializer_list< initializer_list<Type> > list, size_t n );
    // No explicitly declared copy constructor.
    //@}
    //**********************************************************************************************
@@ -370,7 +370,7 @@ inline InitializerMatrix<Type>::InitializerMatrix( initializer_list< initializer
 // \exception std::invalid_argument Invalid initializer list dimension.
 */
 template< typename Type >  // Data type of the matrix
-inline InitializerMatrix<Type>::InitializerMatrix( initializer_list< initializer_list<Type> > list, size_t n ) noexcept
+inline InitializerMatrix<Type>::InitializerMatrix( initializer_list< initializer_list<Type> > list, size_t n )
    : m_   ( list.size() )  // The current number of rows of the matrix
    , n_   ( n    )         // The current number of columns of the matrix
    , list_( list )         // The initializer list represented by the matrix
@@ -686,9 +686,11 @@ inline size_t InitializerMatrix<Type>::nonZeros( size_t i ) const
 template< typename Type >  // Data type of the matrix
 inline void InitializerMatrix<Type>::swap( InitializerMatrix& m ) noexcept
 {
-   std::swap( m_   , m.m_    );
-   std::swap( n_   , m.n_    );
-   std::swap( list_, m.list_ );
+   using std::swap;
+
+   swap( m_   , m.m_    );
+   swap( n_   , m.n_    );
+   swap( list_, m.list_ );
 }
 //*************************************************************************************************
 

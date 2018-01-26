@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/CustomMatrix.h
 //  \brief Header file for the implementation of a customizable matrix
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -76,6 +76,7 @@
 #include <blaze/math/typetraits/HasSIMDMult.h>
 #include <blaze/math/typetraits/HasSIMDSub.h>
 #include <blaze/math/typetraits/IsAligned.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsCustom.h>
 #include <blaze/math/typetraits/IsDiagonal.h>
 #include <blaze/math/typetraits/IsLower.h>
@@ -526,12 +527,6 @@ class CustomMatrix
    template< typename MT, bool SO2 > inline CustomMatrix& operator+=( const Matrix<MT,SO2>& rhs );
    template< typename MT, bool SO2 > inline CustomMatrix& operator-=( const Matrix<MT,SO2>& rhs );
    template< typename MT, bool SO2 > inline CustomMatrix& operator%=( const Matrix<MT,SO2>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, CustomMatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, CustomMatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -1571,50 +1566,6 @@ inline CustomMatrix<Type,AF,PF,SO>& CustomMatrix<Type,AF,PF,SO>::operator%=( con
       smpSchurAssign( *this, ~rhs );
    }
 
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Multiplication assignment operator for the multiplication between a matrix and
-//        a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , bool AF           // Alignment flag
-        , bool PF           // Padding flag
-        , bool SO >         // Storage order
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, CustomMatrix<Type,AF,PF,SO> >&
-   CustomMatrix<Type,AF,PF,SO>::operator*=( Other rhs )
-{
-   smpAssign( *this, (*this) * rhs );
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Division assignment operator for the division of a matrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , bool AF           // Alignment flag
-        , bool PF           // Padding flag
-        , bool SO >         // Storage order
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, CustomMatrix<Type,AF,PF,SO> >&
-   CustomMatrix<Type,AF,PF,SO>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   smpAssign( *this, (*this) / rhs );
    return *this;
 }
 //*************************************************************************************************
@@ -3379,12 +3330,6 @@ class CustomMatrix<Type,AF,PF,true>
    template< typename MT, bool SO > inline CustomMatrix& operator+=( const Matrix<MT,SO>& rhs );
    template< typename MT, bool SO > inline CustomMatrix& operator-=( const Matrix<MT,SO>& rhs );
    template< typename MT, bool SO > inline CustomMatrix& operator%=( const Matrix<MT,SO>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, CustomMatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, CustomMatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -4416,52 +4361,6 @@ inline CustomMatrix<Type,AF,PF,true>&
       smpSchurAssign( *this, ~rhs );
    }
 
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a matrix and
-//        a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , bool AF           // Alignment flag
-        , bool PF >         // Padding flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, CustomMatrix<Type,AF,PF,true> >&
-   CustomMatrix<Type,AF,PF,true>::operator*=( Other rhs )
-{
-   smpAssign( *this, (*this) * rhs );
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a matrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , bool AF           // Alignment flag
-        , bool PF >         // Padding flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, CustomMatrix<Type,AF,PF,true> >&
-   CustomMatrix<Type,AF,PF,true>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   smpAssign( *this, (*this) / rhs );
    return *this;
 }
 /*! \endcond */
@@ -6378,6 +6277,25 @@ struct IsAligned< CustomMatrix<T,aligned,PF,SO> >
 
 //=================================================================================================
 //
+//  ISCONTIGUOUS SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename T, bool AF, bool PF, bool SO >
+struct IsContiguous< CustomMatrix<T,AF,PF,SO> >
+   : public TrueType
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+
+//=================================================================================================
+//
 //  ISPADDED SPECIALIZATIONS
 //
 //=================================================================================================
@@ -6521,13 +6439,13 @@ struct BinaryMapTrait< CustomMatrix<T1,AF1,PF1,SO1>, CustomMatrix<T2,AF2,PF2,SO2
 template< typename T, bool AF, bool PF, bool SO, size_t I, size_t J, size_t M, size_t N >
 struct SubmatrixTrait< CustomMatrix<T,AF,PF,SO>, I, J, M, N >
 {
-   using Type = StaticMatrix<T,M,N,SO>;
+   using Type = StaticMatrix<RemoveConst_<T>,M,N,SO>;
 };
 
 template< typename T, bool AF, bool PF, bool SO >
 struct SubmatrixTrait< CustomMatrix<T,AF,PF,SO> >
 {
-   using Type = DynamicMatrix<T,SO>;
+   using Type = DynamicMatrix<RemoveConst_<T>,SO>;
 };
 /*! \endcond */
 //*************************************************************************************************
@@ -6546,7 +6464,7 @@ struct SubmatrixTrait< CustomMatrix<T,AF,PF,SO> >
 template< typename T, bool AF, bool PF, bool SO, size_t... CRAs >
 struct RowTrait< CustomMatrix<T,AF,PF,SO>, CRAs... >
 {
-   using Type = DynamicVector<T,true>;
+   using Type = DynamicVector<RemoveConst_<T>,true>;
 };
 /*! \endcond */
 //*************************************************************************************************
@@ -6565,7 +6483,7 @@ struct RowTrait< CustomMatrix<T,AF,PF,SO>, CRAs... >
 template< typename T, bool AF, bool PF, bool SO, size_t... CRAs >
 struct RowsTrait< CustomMatrix<T,AF,PF,SO>, CRAs... >
 {
-   using Type = DynamicMatrix<T,false>;
+   using Type = DynamicMatrix<RemoveConst_<T>,false>;
 };
 /*! \endcond */
 //*************************************************************************************************
@@ -6584,7 +6502,7 @@ struct RowsTrait< CustomMatrix<T,AF,PF,SO>, CRAs... >
 template< typename T, bool AF, bool PF, bool SO, size_t... CCAs >
 struct ColumnTrait< CustomMatrix<T,AF,PF,SO>, CCAs... >
 {
-   using Type = DynamicVector<T,false>;
+   using Type = DynamicVector<RemoveConst_<T>,false>;
 };
 /*! \endcond */
 //*************************************************************************************************
@@ -6603,7 +6521,7 @@ struct ColumnTrait< CustomMatrix<T,AF,PF,SO>, CCAs... >
 template< typename T, bool AF, bool PF, bool SO, size_t... CCAs >
 struct ColumnsTrait< CustomMatrix<T,AF,PF,SO>, CCAs... >
 {
-   using Type = DynamicMatrix<T,true>;
+   using Type = DynamicMatrix<RemoveConst_<T>,true>;
 };
 /*! \endcond */
 //*************************************************************************************************
@@ -6622,7 +6540,7 @@ struct ColumnsTrait< CustomMatrix<T,AF,PF,SO>, CCAs... >
 template< typename T, bool AF, bool PF, bool SO, ptrdiff_t... CBAs >
 struct BandTrait< CustomMatrix<T,AF,PF,SO>, CBAs... >
 {
-   using Type = DynamicVector<T,defaultTransposeFlag>;
+   using Type = DynamicVector<RemoveConst_<T>,defaultTransposeFlag>;
 };
 /*! \endcond */
 //*************************************************************************************************

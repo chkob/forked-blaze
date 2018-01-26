@@ -3,7 +3,7 @@
 //  \file blaze/math/views/subvector/BaseTemplate.h
 //  \brief Header file for the implementation of the Subvector base template
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -55,6 +55,10 @@ namespace blaze {
 //=================================================================================================
 
 //*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Base template of the Subvector class template.
+// \ingroup subvector
+*/
 template< typename VT                         // Type of the vector
         , AlignmentFlag AF = unaligned        // Alignment flag
         , bool TF = IsRowVector<VT>::value    // Transpose flag
@@ -62,6 +66,7 @@ template< typename VT                         // Type of the vector
         , size_t... CSAs >                    // Compile time subvector arguments
 class Subvector
 {};
+/*! \endcond */
 //*************************************************************************************************
 
 

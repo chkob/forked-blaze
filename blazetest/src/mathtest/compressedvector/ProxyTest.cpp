@@ -3,7 +3,7 @@
 //  \file src/mathtest/compressedvector/ProxyTest.cpp
 //  \brief Source file for the CompressedVector proxy test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -981,13 +981,13 @@ void ProxyTest::testIterator()
       DVV vec( 3UL, 1UL );
       vec[1] = DV( 4UL, 4 );
 
-      // Counting the number of elements via Iterator
+      // Counting the number of elements via Iterator (end-begin)
       {
          test_ = "VectorAccessProxy::begin() and VectorAccessProxy::end()";
 
-         const size_t number( end( vec[1] ) - begin( vec[1] ) );
+         const ptrdiff_t number( end( vec[1] ) - begin( vec[1] ) );
 
-         if( number != 4UL ) {
+         if( number != 4L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -998,13 +998,13 @@ void ProxyTest::testIterator()
          }
       }
 
-      // Counting the number of elements via ConstIterator
+      // Counting the number of elements via ConstIterator (end-begin)
       {
          test_ = "VectorAccessProxy::cbegin() and VectorAccessProxy::cend()";
 
-         const size_t number( cend( vec[1] ) - cbegin( vec[1] ) );
+         const ptrdiff_t number( cend( vec[1] ) - cbegin( vec[1] ) );
 
-         if( number != 4UL ) {
+         if( number != 4L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1025,13 +1025,13 @@ void ProxyTest::testIterator()
       DMV vec( 3UL, 1UL );
       vec[1] = DM( 4UL, 4UL, 4 );
 
-      // Counting the number of elements via Iterator
+      // Counting the number of elements via Iterator (end-begin)
       {
          test_ = "VectorAccessProxy::begin( size_t ) and VectorAccessProxy::end( size_t )";
 
-         const size_t number( end( vec[1], 1UL ) - begin( vec[1], 1UL ) );
+         const ptrdiff_t number( end( vec[1], 1UL ) - begin( vec[1], 1UL ) );
 
-         if( number != 4UL ) {
+         if( number != 4L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1042,13 +1042,13 @@ void ProxyTest::testIterator()
          }
       }
 
-      // Counting the number of elements via ConstIterator
+      // Counting the number of elements via ConstIterator (end-begin)
       {
          test_ = "VectorAccessProxy::cbegin( size_t ) and VectorAccessProxy::cend( size_t )";
 
-         const size_t number( cend( vec[1], 1UL ) - cbegin( vec[1], 1UL ) );
+         const ptrdiff_t number( cend( vec[1], 1UL ) - cbegin( vec[1], 1UL ) );
 
-         if( number != 4UL ) {
+         if( number != 4L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"

@@ -3,7 +3,7 @@
 //  \file blaze/math/expressions/DMatDMatMapExpr.h
 //  \brief Header file for the dense matrix/dense matrix map expression
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -52,6 +52,7 @@
 #include <blaze/math/expressions/Forward.h>
 #include <blaze/math/expressions/MatMatMapExpr.h>
 #include <blaze/math/functors/Atan2.h>
+#include <blaze/math/functors/Hypot.h>
 #include <blaze/math/functors/Max.h>
 #include <blaze/math/functors/Min.h>
 #include <blaze/math/functors/Pow.h>
@@ -1204,6 +1205,38 @@ inline decltype(auto)
    BLAZE_FUNCTION_TRACE;
 
    return map( ~lhs, ~rhs, Max() );
+}
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*!\brief Computes the componentwise hypotenous for the dense matrices \a lhs and \a rhs.
+// \ingroup dense_matrix
+//
+// \param lhs The left-hand side dense matrix operand.
+// \param rhs The right-hand side dense matrix operand.
+// \return The resulting dense matrix.
+//
+// The \a hypot() function computes the componentwise hypotenous for the two dense matrices
+// \a lhs and \a rhs. The function returns an expression representing this operation.\n
+// The following example demonstrates the use of the \a hypot() function:
+
+   \code
+   blaze::DynamicMatrix<double> A, B, C;
+   // ... Resizing and initialization
+   C = hypot( A, B );
+   \endcode
+*/
+template< typename MT1  // Type of the left-hand side dense matrix
+        , bool SO1      // Storage order of the left-hand side dense matrix
+        , typename MT2  // Type of the right-hand side dense matrix
+        , bool SO2 >    // Storage order of the right-hand side dense matrix
+inline decltype(auto)
+   hypot( const DenseMatrix<MT1,SO1>& lhs, const DenseMatrix<MT2,SO2>& rhs )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   return map( ~lhs, ~rhs, Hypot() );
 }
 //*************************************************************************************************
 

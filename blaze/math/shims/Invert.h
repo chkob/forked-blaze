@@ -3,7 +3,7 @@
 //  \file blaze/math/shims/Invert.h
 //  \brief Header file for the invert shim
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -40,10 +40,12 @@
 // Includes
 //*************************************************************************************************
 
-#include <blaze/math/shims/Square.h>
+#include <blaze/math/shims/Pow2.h>
 #include <blaze/system/Inline.h>
 #include <blaze/util/Assert.h>
 #include <blaze/util/Complex.h>
+#include <blaze/util/EnableIf.h>
+#include <blaze/util/typetraits/IsIntegral.h>
 
 
 namespace blaze {
@@ -53,6 +55,27 @@ namespace blaze {
 //  INV SHIMS
 //
 //=================================================================================================
+
+//*************************************************************************************************
+/*!\brief Inverting the given integral value.
+// \ingroup math_shims
+//
+// \param a The integral value to be inverted.
+// \return The inverse of the given value.
+//
+// The \a inv shim represents an abstract interface for inverting a value/object of any given
+// data type. For integral values this results in \f$ \frac{1}{a} \f$.
+//
+// \note A division by zero is only checked by an user assert.
+*/
+template< typename T >
+BLAZE_ALWAYS_INLINE constexpr EnableIf_< IsIntegral<T>, double > inv( T a ) noexcept
+{
+   BLAZE_USER_ASSERT( a != T(0), "Division by zero detected" );
+   return ( 1.0 / a );
+}
+//*************************************************************************************************
+
 
 //*************************************************************************************************
 /*!\brief Inverting the given single precision value.
@@ -66,7 +89,7 @@ namespace blaze {
 //
 // \note A division by zero is only checked by an user assert.
 */
-BLAZE_ALWAYS_INLINE float inv( float a ) noexcept
+BLAZE_ALWAYS_INLINE constexpr float inv( float a ) noexcept
 {
    BLAZE_USER_ASSERT( a != 0.0F, "Division by zero detected" );
    return ( 1.0F / a );
@@ -86,7 +109,7 @@ BLAZE_ALWAYS_INLINE float inv( float a ) noexcept
 //
 // \note A division by zero is only checked by an user assert.
 */
-BLAZE_ALWAYS_INLINE double inv( double a ) noexcept
+BLAZE_ALWAYS_INLINE constexpr double inv( double a ) noexcept
 {
    BLAZE_USER_ASSERT( a != 0.0, "Division by zero detected" );
    return ( 1.0 / a );
@@ -106,7 +129,7 @@ BLAZE_ALWAYS_INLINE double inv( double a ) noexcept
 //
 // \note A division by zero is only checked by an user assert.
 */
-BLAZE_ALWAYS_INLINE long double inv( long double a ) noexcept
+BLAZE_ALWAYS_INLINE constexpr long double inv( long double a ) noexcept
 {
    BLAZE_USER_ASSERT( a != 0.0L, "Division by zero detected" );
    return ( 1.0L / a );
@@ -127,9 +150,9 @@ BLAZE_ALWAYS_INLINE long double inv( long double a ) noexcept
 //
 // \note A division by zero is only checked by an user assert.
 */
-BLAZE_ALWAYS_INLINE complex<float> inv( const complex<float>& a ) noexcept
+BLAZE_ALWAYS_INLINE constexpr complex<float> inv( const complex<float>& a ) noexcept
 {
-   const float abs( sq( real(a) ) + sq( imag(a) ) );
+   const float abs( pow2( real(a) ) + pow2( imag(a) ) );
    BLAZE_USER_ASSERT( abs != 0.0F, "Division by zero detected" );
 
    const float iabs( 1.0F / abs );
@@ -151,9 +174,9 @@ BLAZE_ALWAYS_INLINE complex<float> inv( const complex<float>& a ) noexcept
 //
 // \note A division by zero is only checked by an user assert.
 */
-BLAZE_ALWAYS_INLINE complex<double> inv( const complex<double>& a ) noexcept
+BLAZE_ALWAYS_INLINE constexpr complex<double> inv( const complex<double>& a ) noexcept
 {
-   const double abs( sq( real(a) ) + sq( imag(a) ) );
+   const double abs( pow2( real(a) ) + pow2( imag(a) ) );
    BLAZE_USER_ASSERT( abs != 0.0, "Division by zero detected" );
 
    const double iabs( 1.0 / abs );
@@ -175,9 +198,9 @@ BLAZE_ALWAYS_INLINE complex<double> inv( const complex<double>& a ) noexcept
 //
 // \note A division by zero is only checked by an user assert.
 */
-BLAZE_ALWAYS_INLINE complex<long double> inv( const complex<long double>& a ) noexcept
+BLAZE_ALWAYS_INLINE constexpr complex<long double> inv( const complex<long double>& a ) noexcept
 {
-   const long double abs( sq( real(a) ) + sq( imag(a) ) );
+   const long double abs( pow2( real(a) ) + pow2( imag(a) ) );
    BLAZE_USER_ASSERT( abs != 0.0L, "Division by zero detected" );
 
    const long double iabs( 1.0L / abs );

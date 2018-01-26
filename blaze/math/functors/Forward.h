@@ -3,7 +3,7 @@
 //  \file blaze/math/functors/Forward.h
 //  \brief Header file for all functor forward declarations
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -52,6 +52,7 @@ struct Asin;
 struct Asinh;
 struct Assign;
 struct Atan;
+struct Atan2;
 struct Atanh;
 struct Cbrt;
 struct Ceil;
@@ -74,6 +75,7 @@ struct Exp;
 struct Exp2;
 struct Exp10;
 struct Floor;
+struct Hypot;
 struct Imag;
 struct Inv;
 struct InvCbrt;
@@ -86,6 +88,8 @@ struct Min;
 struct MultAssign;
 struct Noop;
 struct Pow;
+struct Pow2;
+struct Pow3;
 struct Real;
 struct Round;
 struct SchurAssign;

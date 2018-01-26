@@ -3,7 +3,7 @@
 //  \file blaze/math/expressions/SMatDeclHermExpr.h
 //  \brief Header file for the sparse matrix Hermitian declaration expression
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -964,7 +964,7 @@ inline const IdentityMatrix<ElementType_<MT>,SO> declherm_backend( const SparseM
 template< typename MT  // Type of the sparse matrix
         , bool SO      // Storage order
         , typename = EnableIf_< IsHermitian<MT> > >
-inline const MT& declherm( const SparseMatrix<MT,SO>& sm )
+inline const MT& declherm_backend( const SparseMatrix<MT,SO>& sm )
 {
    BLAZE_FUNCTION_TRACE;
 

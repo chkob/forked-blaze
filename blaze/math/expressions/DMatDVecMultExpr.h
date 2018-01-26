@@ -3,7 +3,7 @@
 //  \file blaze/math/expressions/DMatDVecMultExpr.h
 //  \brief Header file for the dense matrix/dense vector multiplication expression
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -68,6 +68,7 @@
 #include <blaze/math/typetraits/IsAligned.h>
 #include <blaze/math/typetraits/IsBLASCompatible.h>
 #include <blaze/math/typetraits/IsComputation.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsDiagonal.h>
 #include <blaze/math/typetraits/IsExpression.h>
 #include <blaze/math/typetraits/IsLower.h>
@@ -164,9 +165,9 @@ class DMatDVecMultExpr
    template< typename T1, typename T2, typename T3 >
    struct UseBlasKernel {
       enum : bool { value = BLAZE_BLAS_MODE && BLAZE_USE_BLAS_MATRIX_VECTOR_MULTIPLICATION &&
-                            HasMutableDataAccess<T1>::value &&
-                            HasConstDataAccess<T2>::value &&
-                            HasConstDataAccess<T3>::value &&
+                            IsContiguous<T1>::value && HasMutableDataAccess<T1>::value &&
+                            IsContiguous<T2>::value && HasConstDataAccess<T2>::value &&
+                            IsContiguous<T3>::value && HasConstDataAccess<T3>::value &&
                             !IsDiagonal<T2>::value &&
                             T1::simdEnabled && T2::simdEnabled && T3::simdEnabled &&
                             IsBLASCompatible< ElementType_<T1> >::value &&
@@ -2768,9 +2769,9 @@ class DVecScalarMultExpr< DMatDVecMultExpr<MT,VT>, ST, false >
    template< typename T1, typename T2, typename T3, typename T4 >
    struct UseBlasKernel {
       enum : bool { value = BLAZE_BLAS_MODE && BLAZE_USE_BLAS_MATRIX_VECTOR_MULTIPLICATION &&
-                            HasMutableDataAccess<T1>::value &&
-                            HasConstDataAccess<T2>::value &&
-                            HasConstDataAccess<T3>::value &&
+                            IsContiguous<T1>::value && HasMutableDataAccess<T1>::value &&
+                            IsContiguous<T2>::value && HasConstDataAccess<T2>::value &&
+                            IsContiguous<T3>::value && HasConstDataAccess<T3>::value &&
                             !IsDiagonal<T2>::value &&
                             T1::simdEnabled && T2::simdEnabled && T3::simdEnabled &&
                             IsBLASCompatible< ElementType_<T1> >::value &&

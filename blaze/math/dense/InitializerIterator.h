@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/InitializerIterator.h
 //  \brief Header file for the InitializerIterator class template
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //
@@ -552,6 +552,7 @@ inline const InitializerIterator<Type> operator-( const InitializerIterator<Type
 //*************************************************************************************************
 /*!\brief Calculating the number of elements between two iterators.
 //
+// \param lhs The left-hand side iterator.
 // \param rhs The right-hand side iterator.
 // \return The number of elements between the two iterators.
 */

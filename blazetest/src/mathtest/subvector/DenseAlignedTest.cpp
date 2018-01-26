@@ -3,7 +3,7 @@
 //  \file src/mathtest/subvector/DenseAlignedTest.cpp
 //  \brief Source file for the Subvector dense aligned test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -42,6 +42,7 @@
 #include <memory>
 #include <blaze/math/CompressedVector.h>
 #include <blaze/math/CustomVector.h>
+#include <blaze/math/Views.h>
 #include <blaze/util/Memory.h>
 #include <blaze/util/policies/Deallocate.h>
 #include <blaze/util/typetraits/AlignmentOf.h>
@@ -87,6 +88,7 @@ DenseAlignedTest::DenseAlignedTest()
    testIsDefault();
    testIsSame();
    testSubvector();
+   testElements();
 }
 //*************************************************************************************************
 
@@ -1883,14 +1885,14 @@ void DenseAlignedTest::testIterator()
       }
    }
 
-   // Counting the number of elements in first half of the vector via Iterator
+   // Counting the number of elements in first half of the vector via Iterator (end-begin)
    {
-      test_ = "Iterator subtraction";
+      test_ = "Iterator subtraction (end-begin)";
 
       ASVT sv = subvector<aligned>( vec1_, 0UL, 16UL );
-      const size_t number( end( sv ) - begin( sv ) );
+      const ptrdiff_t number( end( sv ) - begin( sv ) );
 
-      if( number != 16UL ) {
+      if( number != 16L ) {
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
              << " Error: Invalid number of elements detected\n"
@@ -1901,20 +1903,56 @@ void DenseAlignedTest::testIterator()
       }
    }
 
-   // Counting the number of elements in second half of the vector via ConstIterator
+   // Counting the number of elements in first half of the vector via Iterator (begin-end)
    {
-      test_ = "ConstIterator subtraction";
+      test_ = "Iterator subtraction (begin-end)";
+
+      ASVT sv = subvector<aligned>( vec1_, 0UL, 16UL );
+      const ptrdiff_t number( begin( sv ) - end( sv ) );
+
+      if( number != -16L ) {
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Invalid number of elements detected\n"
+             << " Details:\n"
+             << "   Number of elements         : " << number << "\n"
+             << "   Expected number of elements: -16\n";
+         throw std::runtime_error( oss.str() );
+      }
+   }
+
+   // Counting the number of elements in second half of the vector via ConstIterator (end-begin)
+   {
+      test_ = "ConstIterator subtraction (end-begin)";
 
       ASVT sv = subvector<aligned>( vec1_, 16UL, 48UL );
-      const size_t number( cend( sv ) - cbegin( sv ) );
+      const ptrdiff_t number( cend( sv ) - cbegin( sv ) );
 
-      if( number != 48UL ) {
+      if( number != 48L ) {
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
              << " Error: Invalid number of elements detected\n"
              << " Details:\n"
              << "   Number of elements         : " << number << "\n"
              << "   Expected number of elements: 48\n";
+         throw std::runtime_error( oss.str() );
+      }
+   }
+
+   // Counting the number of elements in second half of the vector via ConstIterator (begin-end)
+   {
+      test_ = "ConstIterator subtraction (begin-end)";
+
+      ASVT sv = subvector<aligned>( vec1_, 16UL, 48UL );
+      const ptrdiff_t number( cbegin( sv ) - cend( sv ) );
+
+      if( number != -48L ) {
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Invalid number of elements detected\n"
+             << " Details:\n"
+             << "   Number of elements         : " << number << "\n"
+             << "   Expected number of elements: -48\n";
          throw std::runtime_error( oss.str() );
       }
    }
@@ -2479,128 +2517,416 @@ void DenseAlignedTest::testIsSame()
    using blaze::aligned;
 
 
-   test_ = "isSame() function";
+   //=====================================================================================
+   // Vector-based tests
+   //=====================================================================================
 
-   // isSame with vector and matching subvector
    {
-      ASVT sv = subvector<aligned>( vec1_, 0UL, 64UL );
+      test_ = "isSame() function (vector-based)";
 
-      if( blaze::isSame( sv, vec1_ ) == false ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Invalid isSame evaluation\n"
-             << " Details:\n"
-             << "   Vector:\n" << vec1_ << "\n"
-             << "   Subvector:\n" << sv << "\n";
-         throw std::runtime_error( oss.str() );
+      // isSame with vector and matching subvector
+      {
+         ASVT sv = subvector<aligned>( vec1_, 0UL, 64UL );
+
+         if( blaze::isSame( sv, vec1_ ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Vector:\n" << vec1_ << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( vec1_, sv ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Vector:\n" << vec1_ << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( blaze::isSame( vec1_, sv ) == false ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Invalid isSame evaluation\n"
-             << " Details:\n"
-             << "   Vector:\n" << vec1_ << "\n"
-             << "   Subvector:\n" << sv << "\n";
-         throw std::runtime_error( oss.str() );
+      // isSame with vector and non-matching subvector (different size)
+      {
+         ASVT sv = subvector<aligned>( vec1_, 0UL, 32UL );
+
+         if( blaze::isSame( sv, vec1_ ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Vector:\n" << vec1_ << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( vec1_, sv ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Vector:\n" << vec1_ << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with vector and non-matching subvector (different offset)
+      {
+         ASVT sv = subvector<aligned>( vec1_, 16UL, 48UL );
+
+         if( blaze::isSame( sv, vec1_ ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Vector:\n" << vec1_ << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( vec1_, sv ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Vector:\n" << vec1_ << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with matching subvectors
+      {
+         ASVT sv1 = subvector<aligned>( vec1_, 16UL, 32UL );
+         ASVT sv2 = subvector<aligned>( vec1_, 16UL, 32UL );
+
+         if( blaze::isSame( sv1, sv2 ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First subvector:\n" << sv1 << "\n"
+                << "   Second subvector:\n" << sv2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching subvectors (different size)
+      {
+         ASVT sv1 = subvector<aligned>( vec1_, 16UL, 32UL );
+         ASVT sv2 = subvector<aligned>( vec1_, 16UL, 48UL );
+
+         if( blaze::isSame( sv1, sv2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First subvector:\n" << sv1 << "\n"
+                << "   Second subvector:\n" << sv2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching subvectors (different offset)
+      {
+         ASVT sv1 = subvector<aligned>( vec1_, 16UL, 32UL );
+         ASVT sv2 = subvector<aligned>( vec1_, 32UL, 32UL );
+
+         if( blaze::isSame( sv1, sv2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First subvector:\n" << sv1 << "\n"
+                << "   Second subvector:\n" << sv2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
    }
 
-   // isSame with vector and non-matching subvector (different size)
-   {
-      ASVT sv = subvector<aligned>( vec1_, 0UL, 32UL );
 
-      if( blaze::isSame( sv, vec1_ ) == true ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Invalid isSame evaluation\n"
-             << " Details:\n"
-             << "   Vector:\n" << vec1_ << "\n"
-             << "   Subvector:\n" << sv << "\n";
-         throw std::runtime_error( oss.str() );
+   //=====================================================================================
+   // Row-based tests
+   //=====================================================================================
+
+   {
+      test_ = "isSame() function (row-based)";
+
+      blaze::DynamicMatrix<int,blaze::rowMajor> mat( 64UL, 64UL );
+      randomize( mat );
+
+      // isSame with row and matching subvector
+      {
+         auto r  = blaze::row( mat, 8UL );
+         auto sv = subvector<aligned>( r, 0UL, 64UL );
+
+         if( blaze::isSame( sv, r ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row:\n" << r << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( r, sv ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row:\n" << r << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( blaze::isSame( vec1_, sv ) == true ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Invalid isSame evaluation\n"
-             << " Details:\n"
-             << "   Vector:\n" << vec1_ << "\n"
-             << "   Subvector:\n" << sv << "\n";
-         throw std::runtime_error( oss.str() );
+      // isSame with row and non-matching subvector (different size)
+      {
+         auto r  = blaze::row( mat, 8UL );
+         auto sv = subvector<aligned>( r, 0UL, 32UL );
+
+         if( blaze::isSame( sv, r ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row:\n" << r << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( r, sv ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row:\n" << r << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with row and non-matching subvector (different offset)
+      {
+         auto r  = blaze::row( mat, 8UL );
+         auto sv = subvector<aligned>( r, 16UL, 48UL );
+
+         if( blaze::isSame( sv, r ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row:\n" << r << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( r, sv ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row:\n" << r << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with matching subvectors
+      {
+         auto r   = blaze::row( mat, 8UL );
+         auto sv1 = subvector<aligned>( r, 0UL, 32UL );
+         auto sv2 = subvector<aligned>( r, 0UL, 32UL );
+
+         if( blaze::isSame( sv1, sv2 ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First subvector:\n" << sv1 << "\n"
+                << "   Second subvector:\n" << sv2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching subvectors (different size)
+      {
+         auto r   = blaze::row( mat, 8UL );
+         auto sv1 = subvector<aligned>( r, 0UL, 32UL );
+         auto sv2 = subvector<aligned>( r, 0UL, 48UL );
+
+         if( blaze::isSame( sv1, sv2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First subvector:\n" << sv1 << "\n"
+                << "   Second subvector:\n" << sv2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching subvectors (different offset)
+      {
+         auto r   = blaze::row( mat, 8UL );
+         auto sv1 = subvector<aligned>( r,  0UL, 32UL );
+         auto sv2 = subvector<aligned>( r, 16UL, 32UL );
+
+         if( blaze::isSame( sv1, sv2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First subvector:\n" << sv1 << "\n"
+                << "   Second subvector:\n" << sv2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
    }
 
-   // isSame with vector and non-matching subvector (different offset)
-   {
-      ASVT sv = subvector<aligned>( vec1_, 16UL, 48UL );
 
-      if( blaze::isSame( sv, vec1_ ) == true ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Invalid isSame evaluation\n"
-             << " Details:\n"
-             << "   Vector:\n" << vec1_ << "\n"
-             << "   Subvector:\n" << sv << "\n";
-         throw std::runtime_error( oss.str() );
+   //=====================================================================================
+   // Column-based tests
+   //=====================================================================================
+
+   {
+      test_ = "isSame() function (column-based)";
+
+      blaze::DynamicMatrix<int,blaze::columnMajor> mat( 64UL, 64UL );
+      randomize( mat );
+
+      // isSame with column and matching subvector
+      {
+         auto c  = blaze::column( mat, 8UL );
+         auto sv = subvector<aligned>( c, 0UL, 64UL );
+
+         if( blaze::isSame( sv, c ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column:\n" << c << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( c, sv ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column:\n" << c << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( blaze::isSame( vec1_, sv ) == true ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Invalid isSame evaluation\n"
-             << " Details:\n"
-             << "   Vector:\n" << vec1_ << "\n"
-             << "   Subvector:\n" << sv << "\n";
-         throw std::runtime_error( oss.str() );
+      // isSame with column and non-matching subvector (different size)
+      {
+         auto c  = blaze::column( mat, 8UL );
+         auto sv = subvector<aligned>( c, 0UL, 32UL );
+
+         if( blaze::isSame( sv, c ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column:\n" << c << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( c, sv ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column:\n" << c << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
-   }
 
-   // isSame with matching subvectors
-   {
-      ASVT sv1 = subvector<aligned>( vec1_, 16UL, 32UL );
-      ASVT sv2 = subvector<aligned>( vec1_, 16UL, 32UL );
+      // isSame with column and non-matching subvector (different offset)
+      {
+         auto c  = blaze::column( mat, 8UL );
+         auto sv = subvector<aligned>( c, 16UL, 48UL );
 
-      if( blaze::isSame( sv1, sv2 ) == false ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Invalid isSame evaluation\n"
-             << " Details:\n"
-             << "   First subvector:\n" << sv1 << "\n"
-             << "   Second subvector:\n" << sv2 << "\n";
-         throw std::runtime_error( oss.str() );
+         if( blaze::isSame( sv, c ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column:\n" << c << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( c, sv ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column:\n" << c << "\n"
+                << "   Subvector:\n" << sv << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
-   }
 
-   // isSame with non-matching subvectors (different size)
-   {
-      ASVT sv1 = subvector<aligned>( vec1_, 16UL, 32UL );
-      ASVT sv2 = subvector<aligned>( vec1_, 16UL, 48UL );
+      // isSame with matching subvectors
+      {
+         auto c   = blaze::column( mat, 8UL );
+         auto sv1 = subvector<aligned>( c, 0UL, 32UL );
+         auto sv2 = subvector<aligned>( c, 0UL, 32UL );
 
-      if( blaze::isSame( sv1, sv2 ) == true ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Invalid isSame evaluation\n"
-             << " Details:\n"
-             << "   First subvector:\n" << sv1 << "\n"
-             << "   Second subvector:\n" << sv2 << "\n";
-         throw std::runtime_error( oss.str() );
+         if( blaze::isSame( sv1, sv2 ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First subvector:\n" << sv1 << "\n"
+                << "   Second subvector:\n" << sv2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
-   }
 
-   // isSame with non-matching subvectors (different offset)
-   {
-      ASVT sv1 = subvector<aligned>( vec1_, 16UL, 32UL );
-      ASVT sv2 = subvector<aligned>( vec1_, 32UL, 32UL );
+      // isSame with non-matching subvectors (different size)
+      {
+         auto c   = blaze::column( mat, 8UL );
+         auto sv1 = subvector<aligned>( c, 0UL, 32UL );
+         auto sv2 = subvector<aligned>( c, 0UL, 48UL );
 
-      if( blaze::isSame( sv1, sv2 ) == true ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Invalid isSame evaluation\n"
-             << " Details:\n"
-             << "   First subvector:\n" << sv1 << "\n"
-             << "   Second subvector:\n" << sv2 << "\n";
-         throw std::runtime_error( oss.str() );
+         if( blaze::isSame( sv1, sv2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First subvector:\n" << sv1 << "\n"
+                << "   Second subvector:\n" << sv2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching subvectors (different offset)
+      {
+         auto c   = blaze::column( mat, 8UL );
+         auto sv1 = subvector<aligned>( c,  0UL, 32UL );
+         auto sv2 = subvector<aligned>( c, 16UL, 32UL );
+
+         if( blaze::isSame( sv1, sv2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First subvector:\n" << sv1 << "\n"
+                << "   Second subvector:\n" << sv2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
    }
 }
@@ -2686,6 +3012,81 @@ void DenseAlignedTest::testSubvector()
           << " Error: Setup of out-of-bounds subvector succeeded\n"
           << " Details:\n"
           << "   Result:\n" << sv2 << "\n";
+      throw std::runtime_error( oss.str() );
+   }
+   catch( std::invalid_argument& ) {}
+}
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*!\brief Test of the \c elements() function with the Subvector class template.
+//
+// \return void
+// \exception std::runtime_error Error detected.
+//
+// This function performs a test of the \c elements() function used with the Subvector
+// specialization. In case an error is detected, a \a std::runtime_error exception is thrown.
+*/
+void DenseAlignedTest::testElements()
+{
+   using blaze::subvector;
+   using blaze::elements;
+   using blaze::aligned;
+   using blaze::unaligned;
+
+
+   test_ = "elements() function";
+
+   initialize();
+
+   {
+      ASVT sv1 = subvector<aligned>( vec1_, 8UL, 32UL );
+      auto e1 = elements( sv1, { 8UL, 16UL } );
+
+      USVT sv2 = subvector<unaligned>( vec2_, 8UL, 32UL );
+      auto e2 = elements( sv2, { 8UL, 16UL } );
+
+      if( e1 != e2 || vec1_ != vec2_ ) {
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Elements function failed\n"
+             << " Details:\n"
+             << "   Result:\n" << e1 << "\n"
+             << "   Expected result:\n" << e2 << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+
+      if( e1[1] != e2[1] ) {
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Subscript operator access failed\n"
+             << " Details:\n"
+             << "   Result: " << e1[1] << "\n"
+             << "   Expected result: " << e2[1] << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+
+      if( *e1.begin() != *e2.begin() ) {
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Iterator access failed\n"
+             << " Details:\n"
+             << "   Result: " << *e1.begin() << "\n"
+             << "   Expected result: " << *e2.begin() << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+   }
+
+   try {
+      ASVT sv = subvector<aligned>( vec1_, 8UL, 32UL );
+      auto e = elements( sv, { 8UL, 32UL } );
+
+      std::ostringstream oss;
+      oss << " Test: " << test_ << "\n"
+          << " Error: Setup of out-of-bounds element selection succeeded\n"
+          << " Details:\n"
+          << "   Result:\n" << e << "\n";
       throw std::runtime_error( oss.str() );
    }
    catch( std::invalid_argument& ) {}

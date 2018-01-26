@@ -3,7 +3,7 @@
 //  \file blaze/math/views/subvector/Dense.h
 //  \brief Subvector specialization for dense vectors
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -62,6 +62,7 @@
 #include <blaze/math/SIMD.h>
 #include <blaze/math/traits/CrossTrait.h>
 #include <blaze/math/traits/SubvectorTrait.h>
+#include <blaze/math/typetraits/HasMutableDataAccess.h>
 #include <blaze/math/typetraits/HasSIMDAdd.h>
 #include <blaze/math/typetraits/HasSIMDDiv.h>
 #include <blaze/math/typetraits/HasSIMDMult.h>
@@ -89,7 +90,6 @@
 #include <blaze/util/TypeList.h>
 #include <blaze/util/Types.h>
 #include <blaze/util/typetraits/IsConst.h>
-#include <blaze/util/typetraits/IsNumeric.h>
 
 
 namespace blaze {
@@ -142,14 +142,14 @@ class Subvector<VT,unaligned,TF,true,CSAs...>
    using Reference = If_< IsConst<VT>, ConstReference, Reference_<VT> >;
 
    //! Pointer to a constant subvector value.
-   using ConstPointer = const ElementType*;
+   using ConstPointer = ConstPointer_<VT>;
 
    //! Pointer to a non-constant subvector value.
-   using Pointer = If_< Or< IsConst<VT>, Not< HasMutableDataAccess<VT> > >, ConstPointer, ElementType* >;
+   using Pointer = If_< Or< IsConst<VT>, Not< HasMutableDataAccess<VT> > >, ConstPointer, Pointer_<VT> >;
    //**********************************************************************************************
 
    //**SubvectorIterator class definition**********************************************************
-   /*!\brief Iterator over the elements of the sparse subvector.
+   /*!\brief Iterator over the elements of the dense subvector.
    */
    template< typename IteratorType >  // Type of the dense vector iterator
    class SubvectorIterator
@@ -281,10 +281,20 @@ class Subvector<VT,unaligned,TF,true,CSAs...>
       //**Element access operator******************************************************************
       /*!\brief Direct access to the element at the current iterator position.
       //
-      // \return The resulting value.
+      // \return Reference to the current value.
       */
       inline ReferenceType operator*() const {
          return *iterator_;
+      }
+      //*******************************************************************************************
+
+      //**Element access operator******************************************************************
+      /*!\brief Direct access to the element at the current iterator position.
+      //
+      // \return Pointer to the element at the current iterator position.
+      */
+      inline IteratorType operator->() const {
+         return iterator_;
       }
       //*******************************************************************************************
 
@@ -605,14 +615,8 @@ class Subvector<VT,unaligned,TF,true,CSAs...>
    template< typename VT2 > inline Subvector& operator+=( const Vector<VT2,TF>& rhs );
    template< typename VT2 > inline Subvector& operator-=( const Vector<VT2,TF>& rhs );
    template< typename VT2 > inline Subvector& operator*=( const Vector<VT2,TF>& rhs );
-   template< typename VT2 > inline Subvector& operator/=( const DenseVector<VT2,TF>&  rhs );
+   template< typename VT2 > inline Subvector& operator/=( const DenseVector<VT2,TF>& rhs );
    template< typename VT2 > inline Subvector& operator%=( const Vector<VT2,TF>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Subvector >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Subvector >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -622,11 +626,13 @@ class Subvector<VT,unaligned,TF,true,CSAs...>
    using DataType::offset;
    using DataType::size;
 
-   inline Operand operand() const noexcept;
-   inline size_t  spacing() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  nonZeros() const;
-   inline void    reset();
+   inline VT&       operand() noexcept;
+   inline const VT& operand() const noexcept;
+
+   inline size_t spacing() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t nonZeros() const;
+   inline void   reset();
    //@}
    //**********************************************************************************************
 
@@ -742,7 +748,7 @@ class Subvector<VT,unaligned,TF,true,CSAs...>
    template< typename VT2 > inline void addAssign( const SparseVector<VT2,TF>& rhs );
 
    template< typename VT2 >
-   inline DisableIf_< VectorizedSubAssign<VT2> > subAssign ( const DenseVector <VT2,TF>& rhs );
+   inline DisableIf_< VectorizedSubAssign<VT2> > subAssign( const DenseVector <VT2,TF>& rhs );
 
    template< typename VT2 >
    inline EnableIf_< VectorizedSubAssign<VT2> > subAssign( const DenseVector <VT2,TF>& rhs );
@@ -800,7 +806,7 @@ class Subvector<VT,unaligned,TF,true,CSAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -875,7 +881,7 @@ inline typename Subvector<VT,unaligned,TF,true,CSAs...>::Reference
 /*! \cond BLAZE_INTERNAL */
 /*!\brief Subscript operator for the direct access to the subvector elements.
 //
-// \param index Access index. The index must be smaller than the number of subvector columns.
+// \param index Access index. The index must be smaller than the number of subvector elements.
 // \return Reference to the accessed value.
 //
 // This function only performs an index check in case BLAZE_USER_ASSERT() is active. In contrast,
@@ -898,7 +904,7 @@ inline typename Subvector<VT,unaligned,TF,true,CSAs...>::ConstReference
 /*! \cond BLAZE_INTERNAL */
 /*!\brief Checked access to the subvector elements.
 //
-// \param index Access index. The index must be smaller than the number of subvector columns.
+// \param index Access index. The index must be smaller than the number of subvector elements.
 // \return Reference to the accessed value.
 // \exception std::out_of_range Invalid subvector access index.
 //
@@ -924,7 +930,7 @@ inline typename Subvector<VT,unaligned,TF,true,CSAs...>::Reference
 /*! \cond BLAZE_INTERNAL */
 /*!\brief Checked access to the subvector elements.
 //
-// \param index Access index. The index must be smaller than the number of subvector columns.
+// \param index Access index. The index must be smaller than the number of subvector elements.
 // \return Reference to the accessed value.
 // \exception std::out_of_range Invalid subvector access index.
 //
@@ -1146,6 +1152,7 @@ inline Subvector<VT,unaligned,TF,true,CSAs...>&
 /*!\brief List assignment to all subvector elements.
 //
 // \param list The initializer list.
+// \return Reference to the assigned subvector.
 // \exception std::invalid_argument Invalid assignment to subvector.
 // \exception std::invalid_argument Invalid assignment to restricted vector.
 //
@@ -1174,6 +1181,7 @@ inline Subvector<VT,unaligned,TF,true,CSAs...>&
    }
 
    decltype(auto) left( derestrict( *this ) );
+
    std::fill( std::copy( list.begin(), list.end(), left.begin() ), left.end(), ElementType() );
 
    BLAZE_INTERNAL_ASSERT( isIntact( vector_ ), "Invariant violation detected" );
@@ -1545,58 +1553,6 @@ inline Subvector<VT,unaligned,TF,true,CSAs...>&
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a subvector and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the assigned subvector.
-*/
-template< typename VT       // Type of the dense vector
-        , bool TF           // Transpose flag
-        , size_t... CSAs >  // Compile time subvector arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Subvector<VT,unaligned,TF,true,CSAs...> >&
-   Subvector<VT,unaligned,TF,true,CSAs...>::operator*=( Other rhs )
-{
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) * rhs );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a subvector by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the assigned subvector.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename VT       // Type of the dense vector
-        , bool TF           // Transpose flag
-        , size_t... CSAs >  // Compile time subvector arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Subvector<VT,unaligned,TF,true,CSAs...> >&
-   Subvector<VT,unaligned,TF,true,CSAs...>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) / rhs );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -1614,8 +1570,24 @@ inline EnableIf_< IsNumeric<Other>, Subvector<VT,unaligned,TF,true,CSAs...> >&
 template< typename VT       // Type of the dense vector
         , bool TF           // Transpose flag
         , size_t... CSAs >  // Compile time subvector arguments
-inline typename Subvector<VT,unaligned,TF,true,CSAs...>::Operand
-   Subvector<VT,unaligned,TF,true,CSAs...>::operand() const noexcept
+inline VT& Subvector<VT,unaligned,TF,true,CSAs...>::operand() noexcept
+{
+   return vector_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the vector containing the subvector.
+//
+// \return The vector containing the subvector.
+*/
+template< typename VT       // Type of the dense vector
+        , bool TF           // Transpose flag
+        , size_t... CSAs >  // Compile time subvector arguments
+inline const VT& Subvector<VT,unaligned,TF,true,CSAs...>::operand() const noexcept
 {
    return vector_;
 }
@@ -2718,10 +2690,10 @@ class Subvector<VT,aligned,TF,true,CSAs...>
    using Reference = If_< IsConst<VT>, ConstReference, Reference_<VT> >;
 
    //! Pointer to a constant subvector value.
-   using ConstPointer = const ElementType*;
+   using ConstPointer = ConstPointer_<VT>;
 
    //! Pointer to a non-constant subvector value.
-   using Pointer = If_< Or< IsConst<VT>, Not< HasMutableDataAccess<VT> > >, ConstPointer, ElementType* >;
+   using Pointer = If_< Or< IsConst<VT>, Not< HasMutableDataAccess<VT> > >, ConstPointer, Pointer_<VT> >;
 
    //! Iterator over constant elements.
    using ConstIterator = ConstIterator_<VT>;
@@ -2781,12 +2753,6 @@ class Subvector<VT,aligned,TF,true,CSAs...>
    template< typename VT2 > inline Subvector& operator*=( const Vector<VT2,TF>& rhs );
    template< typename VT2 > inline Subvector& operator/=( const DenseVector<VT2,TF>&  rhs );
    template< typename VT2 > inline Subvector& operator%=( const Vector<VT2,TF>&  rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Subvector >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Subvector >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -2796,11 +2762,13 @@ class Subvector<VT,aligned,TF,true,CSAs...>
    using DataType::offset;
    using DataType::size;
 
-   inline Operand operand() const noexcept;
-   inline size_t  spacing() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  nonZeros() const;
-   inline void    reset();
+   inline VT&       operand() noexcept;
+   inline const VT& operand() const noexcept;
+
+   inline size_t spacing() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t nonZeros() const;
+   inline void   reset();
    //@}
    //**********************************************************************************************
 
@@ -2967,7 +2935,7 @@ class Subvector<VT,aligned,TF,true,CSAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -3338,6 +3306,7 @@ inline Subvector<VT,aligned,TF,true,CSAs...>&
    }
 
    decltype(auto) left( derestrict( *this ) );
+
    std::fill( std::copy( list.begin(), list.end(), begin() ), end(), ElementType() );
 
    BLAZE_INTERNAL_ASSERT( isIntact( vector_ ), "Invariant violation detected" );
@@ -3709,58 +3678,6 @@ inline Subvector<VT,aligned,TF,true,CSAs...>&
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a subvector and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the assigned subvector.
-*/
-template< typename VT       // Type of the dense vector
-        , bool TF           // Transpose flag
-        , size_t... CSAs >  // Compile time subvector arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Subvector<VT,aligned,TF,true,CSAs...> >&
-   Subvector<VT,aligned,TF,true,CSAs...>::operator*=( Other rhs )
-{
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) * rhs );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a subvector by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the assigned subvector.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename VT       // Type of the dense vector
-        , bool TF           // Transpose flag
-        , size_t... CSAs >  // Compile time subvector arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Subvector<VT,aligned,TF,true,CSAs...> >&
-   Subvector<VT,aligned,TF,true,CSAs...>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) / rhs );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -3778,8 +3695,24 @@ inline EnableIf_< IsNumeric<Other>, Subvector<VT,aligned,TF,true,CSAs...> >&
 template< typename VT       // Type of the dense vector
         , bool TF           // Transpose flag
         , size_t... CSAs >  // Compile time subvector arguments
-inline typename Subvector<VT,aligned,TF,true,CSAs...>::Operand
-   Subvector<VT,aligned,TF,true,CSAs...>::operand() const noexcept
+inline VT& Subvector<VT,aligned,TF,true,CSAs...>::operand() noexcept
+{
+   return vector_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the vector containing the subvector.
+//
+// \return The vector containing the subvector.
+*/
+template< typename VT       // Type of the dense vector
+        , bool TF           // Transpose flag
+        , size_t... CSAs >  // Compile time subvector arguments
+inline const VT& Subvector<VT,aligned,TF,true,CSAs...>::operand() const noexcept
 {
    return vector_;
 }

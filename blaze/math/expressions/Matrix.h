@@ -3,7 +3,7 @@
 //  \file blaze/math/expressions/Matrix.h
 //  \brief Header file for the Matrix base class
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -147,6 +147,31 @@ inline VT& operator*=( Vector<VT,false>& lhs, const Matrix<MT,SO>& rhs )
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
+/*!\brief Multiplication assignment operator for the multiplication of a temporary column vector
+//        and a matrix (\f$ v*=A \f$).
+// \ingroup matrix
+//
+// \param mat The left-hand side temporary column vector for the multiplication.
+// \param vec The right-hand side matrix for the multiplication.
+// \return Reference to the left-hand side vector.
+// \exception std::invalid_argument Matrix and vector sizes do not match.
+//
+// In case the current size of the vector \a vec doesn't match the current number of columns
+// of the matrix \a mat, a \a std::invalid_argument is thrown.
+*/
+template< typename VT  // Type of the left-hand side column vector
+        , typename MT  // Type of the right-hand side matrix
+        , bool SO >    // Storage order of the right-hand side matrix
+inline VT& operator*=( Vector<VT,false>&& lhs, const Matrix<MT,SO>& rhs )
+{
+   return (~lhs) *= (~rhs);
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
 /*!\brief Multiplication assignment operator for the multiplication of a row vector and a
 //        matrix (\f$ v*=A \f$).
 // \ingroup matrix
@@ -174,6 +199,31 @@ inline VT& operator*=( Vector<VT,true>& lhs, const Matrix<MT,SO>& rhs )
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
+/*!\brief Multiplication assignment operator for the multiplication of a temporary row vector
+//        and a matrix (\f$ v*=A \f$).
+// \ingroup matrix
+//
+// \param mat The left-hand side temporary row vector for the multiplication.
+// \param vec The right-hand side matrix for the multiplication.
+// \return Reference to the left-hand side vector.
+// \exception std::invalid_argument Matrix and vector sizes do not match.
+//
+// In case the current size of the vector \a vec doesn't match the current number of columns
+// of the matrix \a mat, a \a std::invalid_argument is thrown.
+*/
+template< typename VT  // Type of the left-hand side row vector
+        , typename MT  // Type of the right-hand side matrix
+        , bool SO >    // Storage order of the right-hand side matrix
+inline VT& operator*=( Vector<VT,true>&& lhs, const Matrix<MT,SO>& rhs )
+{
+   return (~lhs) *= (~rhs);
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
 /*!\brief Multiplication assignment operator for the multiplication of two matrices (\f$ A*=B \f$).
 // \ingroup matrix
 //
@@ -194,6 +244,32 @@ inline MT1& operator*=( Matrix<MT1,SO1>& lhs, const Matrix<MT2,SO2>& rhs )
    ResultType_<MT1> tmp( (~lhs) * (~rhs) );
    (~lhs) = std::move( tmp );
    return (~lhs);
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Multiplication assignment operator for the multiplication of a temporary matrix with
+//        another matrix (\f$ A*=B \f$).
+// \ingroup matrix
+//
+// \param lhs The left-hand side temporary matrix for the multiplication.
+// \param rhs The right-hand side matrix for the multiplication.
+// \return Reference to the left-hand side matrix.
+// \exception std::invalid_argument Matrix sizes do not match.
+//
+// In case the current number of columns of \a lhs and the current number of rows of \a rhs
+// don't match, a \a std::invalid_argument is thrown.
+*/
+template< typename MT1  // Type of the left-hand side matrix
+        , bool SO1      // Storage order of the left-hand side matrix
+        , typename MT2  // Type of the right-hand side matrix
+        , bool SO2 >    // Storage order of the right-hand side matrix
+inline MT1& operator*=( Matrix<MT1,SO1>&& lhs, const Matrix<MT2,SO2>& rhs )
+{
+   return (~lhs) *= (~rhs);
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1351,8 +1427,8 @@ BLAZE_ALWAYS_INLINE void multAssign( Matrix<MT1,SO1>& lhs, const Matrix<MT2,SO2>
 // \param mat The target matrix.
 // \param i The row index of the element to be set.
 // \param j The column index of the element to be set.
-// \param value The value of the element to be set.
-// \return \a true in case the set operation would be successful, \a false if not.
+// \param value The value to be set to the element.
+// \return \a true in case the operation would be successful, \a false if not.
 //
 // This function must \b NOT be called explicitly! It is used internally for the performance
 // optimized evaluation of expression templates. Calling this function explicitly might result
@@ -1364,10 +1440,212 @@ template< typename MT    // Type of the matrix
         , typename ET >  // Type of the element
 BLAZE_ALWAYS_INLINE bool trySet( const Matrix<MT,SO>& mat, size_t i, size_t j, const ET& value )
 {
-   BLAZE_INTERNAL_ASSERT( i <= (~mat).rows(), "Invalid row access index" );
-   BLAZE_INTERNAL_ASSERT( j <= (~mat).columns(), "Invalid column access index" );
+   BLAZE_INTERNAL_ASSERT( i < (~mat).rows(), "Invalid row access index" );
+   BLAZE_INTERNAL_ASSERT( j < (~mat).columns(), "Invalid column access index" );
 
    UNUSED_PARAMETER( mat, i, j, value );
+
+   return true;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by adding to a single element of a matrix.
+// \ingroup matrix
+//
+// \param mat The target matrix.
+// \param i The row index of the element to be modified.
+// \param j The column index of the element to be modified.
+// \param value The value to be added to the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT    // Type of the matrix
+        , bool SO        // Storage order
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool tryAdd( const Matrix<MT,SO>& mat, size_t i, size_t j, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( i < (~mat).rows(), "Invalid row access index" );
+   BLAZE_INTERNAL_ASSERT( j < (~mat).columns(), "Invalid column access index" );
+
+   UNUSED_PARAMETER( mat, i, j, value );
+
+   return true;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by subtracting from a single element of a matrix.
+// \ingroup matrix
+//
+// \param mat The target matrix.
+// \param i The row index of the element to be modified.
+// \param j The column index of the element to be modified.
+// \param value The value to be subtracted from the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT    // Type of the matrix
+        , bool SO        // Storage order
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool trySub( const Matrix<MT,SO>& mat, size_t i, size_t j, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( i < (~mat).rows(), "Invalid row access index" );
+   BLAZE_INTERNAL_ASSERT( j < (~mat).columns(), "Invalid column access index" );
+
+   UNUSED_PARAMETER( mat, i, j, value );
+
+   return true;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a matrix.
+// \ingroup matrix
+//
+// \param mat The target matrix.
+// \param i The row index of the element to be modified.
+// \param j The column index of the element to be modified.
+// \param value The factor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT    // Type of the matrix
+        , bool SO        // Storage order
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool tryMult( const Matrix<MT,SO>& mat, size_t i, size_t j, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( i < (~mat).rows(), "Invalid row access index" );
+   BLAZE_INTERNAL_ASSERT( j < (~mat).columns(), "Invalid column access index" );
+
+   UNUSED_PARAMETER( mat, i, j, value );
+
+   return true;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a matrix.
+// \ingroup matrix
+//
+// \param mat The target matrix.
+// \param row The index of the first row of the range to be modified.
+// \param column The index of the first column of the range to be modified.
+// \param m The number of rows of the range to be modified.
+// \param n The number of columns of the range to be modified.
+// \param value The factor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT    // Type of the matrix
+        , bool SO        // Storage order
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryMult( const Matrix<MT,SO>& mat, size_t row, size_t column, size_t m, size_t n, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( row <= (~mat).rows(), "Invalid row access index" );
+   BLAZE_INTERNAL_ASSERT( column <= (~mat).columns(), "Invalid column access index" );
+   BLAZE_INTERNAL_ASSERT( row + m <= (~mat).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + n <= (~mat).columns(), "Invalid number of columns" );
+
+   UNUSED_PARAMETER( mat, row, column, m, n, value );
+
+   return true;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a matrix.
+// \ingroup matrix
+//
+// \param mat The target matrix.
+// \param i The row index of the element to be modified.
+// \param j The column index of the element to be modified.
+// \param value The divisor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT    // Type of the matrix
+        , bool SO        // Storage order
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool tryDiv( const Matrix<MT,SO>& mat, size_t i, size_t j, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( i < (~mat).rows(), "Invalid row access index" );
+   BLAZE_INTERNAL_ASSERT( j < (~mat).columns(), "Invalid column access index" );
+
+   UNUSED_PARAMETER( mat, i, j, value );
+
+   return true;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a matrix.
+// \ingroup matrix
+//
+// \param mat The target matrix.
+// \param row The index of the first row of the range to be modified.
+// \param column The index of the first column of the range to be modified.
+// \param m The number of rows of the range to be modified.
+// \param n The number of columns of the range to be modified.
+// \param value The divisor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT    // Type of the matrix
+        , bool SO        // Storage order
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryDiv( const Matrix<MT,SO>& mat, size_t row, size_t column, size_t m, size_t n, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( row <= (~mat).rows(), "Invalid row access index" );
+   BLAZE_INTERNAL_ASSERT( column <= (~mat).columns(), "Invalid column access index" );
+   BLAZE_INTERNAL_ASSERT( row + m <= (~mat).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + n <= (~mat).columns(), "Invalid number of columns" );
+
+   UNUSED_PARAMETER( mat, row, column, m, n, value );
 
    return true;
 }
@@ -1400,8 +1678,8 @@ BLAZE_ALWAYS_INLINE bool tryAssign( const Matrix<MT,SO>& lhs, const Vector<VT,TF
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( TF || ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( !TF || ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( TF || ( row + (~rhs).size() <= (~lhs).rows() ), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( !TF || ( column + (~rhs).size() <= (~lhs).columns() ), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, row, column );
 
@@ -1437,8 +1715,8 @@ BLAZE_ALWAYS_INLINE bool tryAssign( const Matrix<MT,SO>& lhs, const Vector<VT,TF
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( row + (~rhs).size() <= (~lhs).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + (~rhs).size() <= (~lhs).columns(), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, band, row, column );
 
@@ -1473,8 +1751,8 @@ BLAZE_ALWAYS_INLINE bool tryAssign( const Matrix<MT1,SO1>& lhs, const Matrix<MT2
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).rows() <= (~lhs).rows() - row, "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).columns() <= (~lhs).columns() - column, "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( row + (~rhs).rows() <= (~lhs).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + (~rhs).columns() <= (~lhs).columns(), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, row, column );
 
@@ -1509,8 +1787,8 @@ BLAZE_ALWAYS_INLINE bool tryAddAssign( const Matrix<MT,SO>& lhs, const Vector<VT
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( TF || ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( !TF || ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( TF || ( row + (~rhs).size() <= (~lhs).rows() ), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( !TF || ( column + (~rhs).size() <= (~lhs).columns() ), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, row, column );
 
@@ -1546,8 +1824,8 @@ BLAZE_ALWAYS_INLINE bool tryAddAssign( const Matrix<MT,SO>& lhs, const Vector<VT
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( row + (~rhs).size() <= (~lhs).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + (~rhs).size() <= (~lhs).columns(), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, band, row, column );
 
@@ -1582,8 +1860,8 @@ BLAZE_ALWAYS_INLINE bool tryAddAssign( const Matrix<MT1,SO1>& lhs, const Matrix<
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).rows() <= (~lhs).rows() - row, "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).columns() <= (~lhs).columns() - column, "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( row + (~rhs).rows() <= (~lhs).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + (~rhs).columns() <= (~lhs).columns(), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, row, column );
 
@@ -1618,8 +1896,8 @@ BLAZE_ALWAYS_INLINE bool trySubAssign( const Matrix<MT,SO>& lhs, const Vector<VT
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( TF || ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( !TF || ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( TF || ( row + (~rhs).size() <= (~lhs).rows() ), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( !TF || ( column + (~rhs).size() <= (~lhs).columns() ), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, row, column );
 
@@ -1656,8 +1934,8 @@ BLAZE_ALWAYS_INLINE bool trySubAssign( const Matrix<MT,SO>& lhs, const Vector<VT
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( row + (~rhs).size() <= (~lhs).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + (~rhs).size() <= (~lhs).columns(), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, band, row, column );
 
@@ -1692,8 +1970,8 @@ BLAZE_ALWAYS_INLINE bool trySubAssign( const Matrix<MT1,SO1>& lhs, const Matrix<
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).rows() <= (~lhs).rows() - row, "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).columns() <= (~lhs).columns() - column, "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( row + (~rhs).rows() <= (~lhs).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + (~rhs).columns() <= (~lhs).columns(), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, row, column );
 
@@ -1728,8 +2006,8 @@ BLAZE_ALWAYS_INLINE bool tryMultAssign( const Matrix<MT,SO>& lhs, const Vector<V
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( TF || ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( !TF || ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( TF || ( row + (~rhs).size() <= (~lhs).rows() ), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( !TF || ( column + (~rhs).size() <= (~lhs).columns() ), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, row, column );
 
@@ -1766,8 +2044,8 @@ BLAZE_ALWAYS_INLINE bool tryMultAssign( const Matrix<MT,SO>& lhs, const Vector<V
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( row + (~rhs).size() <= (~lhs).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + (~rhs).size() <= (~lhs).columns(), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, band, row, column );
 
@@ -1802,8 +2080,8 @@ BLAZE_ALWAYS_INLINE bool trySchurAssign( const Matrix<MT1,SO1>& lhs, const Matri
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).rows() <= (~lhs).rows() - row, "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).columns() <= (~lhs).columns() - column, "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( row + (~rhs).rows() <= (~lhs).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + (~rhs).columns() <= (~lhs).columns(), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, row, column );
 
@@ -1838,8 +2116,8 @@ BLAZE_ALWAYS_INLINE bool tryDivAssign( const Matrix<MT,SO>& lhs, const Vector<VT
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( TF || ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( !TF || ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( TF || ( row + (~rhs).size() <= (~lhs).rows() ), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( !TF || ( column + (~rhs).size() <= (~lhs).columns() ), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, row, column );
 
@@ -1876,8 +2154,8 @@ BLAZE_ALWAYS_INLINE bool tryDivAssign( const Matrix<MT,SO>& lhs, const Vector<VT
 {
    BLAZE_INTERNAL_ASSERT( row <= (~lhs).rows(), "Invalid row access index" );
    BLAZE_INTERNAL_ASSERT( column <= (~lhs).columns(), "Invalid column access index" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).rows() - row ), "Invalid number of rows" );
-   BLAZE_INTERNAL_ASSERT( ( (~rhs).size() <= (~lhs).columns() - column ), "Invalid number of columns" );
+   BLAZE_INTERNAL_ASSERT( row + (~rhs).size() <= (~lhs).rows(), "Invalid number of rows" );
+   BLAZE_INTERNAL_ASSERT( column + (~rhs).size() <= (~lhs).columns(), "Invalid number of columns" );
 
    UNUSED_PARAMETER( lhs, rhs, band, row, column );
 

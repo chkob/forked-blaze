@@ -3,7 +3,7 @@
 //  \file blaze/math/views/Subvector.h
 //  \brief Header file for the implementation of the Subvector view
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -40,6 +40,7 @@
 // Includes
 //*************************************************************************************************
 
+#include <algorithm>
 #include <blaze/math/Aliases.h>
 #include <blaze/math/AlignmentFlag.h>
 #include <blaze/math/Exception.h>
@@ -56,6 +57,7 @@
 #include <blaze/math/expressions/VecVecMapExpr.h>
 #include <blaze/math/expressions/VecVecMultExpr.h>
 #include <blaze/math/expressions/VecVecSubExpr.h>
+#include <blaze/math/IntegerSequence.h>
 #include <blaze/math/shims/IsDefault.h>
 #include <blaze/math/shims/Serial.h>
 #include <blaze/math/traits/ElementsTrait.h>
@@ -63,12 +65,16 @@
 #include <blaze/math/typetraits/HasConstDataAccess.h>
 #include <blaze/math/typetraits/HasMutableDataAccess.h>
 #include <blaze/math/typetraits/IsAligned.h>
+#include <blaze/math/typetraits/IsContiguous.h>
+#include <blaze/math/typetraits/IsRestricted.h>
 #include <blaze/math/typetraits/Size.h>
 #include <blaze/math/views/Check.h>
 #include <blaze/math/views/subvector/BaseTemplate.h>
 #include <blaze/math/views/subvector/Dense.h>
 #include <blaze/math/views/subvector/Sparse.h>
+#include <blaze/util/Assert.h>
 #include <blaze/util/FunctionTrace.h>
+#include <blaze/util/SmallVector.h>
 #include <blaze/util/StaticAssert.h>
 #include <blaze/util/TrueType.h>
 #include <blaze/util/TypeList.h>
@@ -317,7 +323,7 @@ inline decltype(auto) subvector( Vector<VT,TF>&& vector, RSAs... args )
 template< AlignmentFlag AF    // Alignment flag
         , size_t I            // Index of the first subvector element
         , size_t N            // Size of the subvector
-        , typename VT         // Type of the dense vector
+        , typename VT         // Type of the vector
         , bool TF             // Transpose flag
         , typename... RSAs >  // Optional subvector arguments
 inline decltype(auto) subvector( Vector<VT,TF>& vector, RSAs... args )
@@ -397,7 +403,7 @@ inline decltype(auto) subvector( Vector<VT,TF>& vector, RSAs... args )
 template< AlignmentFlag AF    // Alignment flag
         , size_t I            // Index of the first subvector element
         , size_t N            // Size of the subvector
-        , typename VT         // Type of the dense vector
+        , typename VT         // Type of the vector
         , bool TF             // Transpose flag
         , typename... RSAs >  // Optional subvector arguments
 inline decltype(auto) subvector( const Vector<VT,TF>& vector, RSAs... args )
@@ -429,7 +435,7 @@ inline decltype(auto) subvector( const Vector<VT,TF>& vector, RSAs... args )
 template< AlignmentFlag AF    // Alignment flag
         , size_t I            // Index of the first subvector element
         , size_t N            // Size of the subvector
-        , typename VT         // Type of the dense vector
+        , typename VT         // Type of the vector
         , bool TF             // Transpose flag
         , typename... RSAs >  // Optional subvector arguments
 inline decltype(auto) subvector( Vector<VT,TF>&& vector, RSAs... args )
@@ -675,7 +681,7 @@ inline decltype(auto) subvector( Vector<VT,TF>&& vector, size_t index, size_t si
 // In case any alignment restrictions are violated, a \a std::invalid_argument exception is thrown.
 */
 template< AlignmentFlag AF    // Alignment flag
-        , typename VT         // Type of the dense vector
+        , typename VT         // Type of the vector
         , bool TF             // Transpose flag
         , typename... RSAs >  // Optional subvector arguments
 inline decltype(auto) subvector( Vector<VT,TF>& vector, size_t index, size_t size, RSAs... args )
@@ -755,7 +761,7 @@ inline decltype(auto) subvector( Vector<VT,TF>& vector, size_t index, size_t siz
 // In case any alignment restrictions are violated, a \a std::invalid_argument exception is thrown.
 */
 template< AlignmentFlag AF    // Alignment flag
-        , typename VT         // Type of the dense vector
+        , typename VT         // Type of the vector
         , bool TF             // Transpose flag
         , typename... RSAs >  // Optional subvector arguments
 inline decltype(auto) subvector( const Vector<VT,TF>& vector, size_t index, size_t size, RSAs... args )
@@ -787,7 +793,7 @@ inline decltype(auto) subvector( const Vector<VT,TF>& vector, size_t index, size
 // is thrown.
 */
 template< AlignmentFlag AF    // Alignment flag
-        , typename VT         // Type of the dense vector
+        , typename VT         // Type of the vector
         , bool TF             // Transpose flag
         , typename... RSAs >  // Optional subvector arguments
 inline decltype(auto) subvector( Vector<VT,TF>&& vector, size_t index, size_t size, RSAs... args )
@@ -1132,11 +1138,45 @@ inline decltype(auto) subvector( const VecTransExpr<VT>& vector, RSAs... args )
 /*!\brief Creating a view on a specific subvector of another subvector.
 // \ingroup subvector
 //
-// \param sv The constant subvector.
+// \param sv The given subvector.
 // \param args The optional subvector arguments.
 // \return View on the specified subvector of the other subvector.
 //
 // This function returns an expression representing the specified subvector of the given subvector.
+*/
+template< AlignmentFlag AF1   // Required alignment flag
+        , size_t I1           // Required subvector offset
+        , size_t N1           // Required size of the subvector
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF2   // Present alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t I2           // Present subvector offset
+        , size_t N2           // Present size of the subvector
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( Subvector<VT,AF2,TF,DF,I2,N2>& sv, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   BLAZE_STATIC_ASSERT_MSG( I1 + N1 <= N2, "Invalid subvector specification" );
+
+   return subvector<AF1,I1+I2,N1>( sv.operand(), args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of another constant subvector.
+// \ingroup subvector
+//
+// \param sv The given constant subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the other subvector.
+//
+// This function returns an expression representing the specified subvector of the given constant
+// subvector.
 */
 template< AlignmentFlag AF1   // Required alignment flag
         , size_t I1           // Required subvector offset
@@ -1162,14 +1202,91 @@ inline decltype(auto) subvector( const Subvector<VT,AF2,TF,DF,I2,N2>& sv, RSAs..
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
-/*!\brief Creating a view on a specific subvector of another subvector.
+/*!\brief Creating a view on a specific subvector of another temporary subvector.
 // \ingroup subvector
 //
-// \param sv The constant subvector.
+// \param sv The given temporary subvector.
 // \param args The optional subvector arguments.
 // \return View on the specified subvector of the other subvector.
 //
+// This function returns an expression representing the specified subvector of the given temporary
+// subvector.
+*/
+template< AlignmentFlag AF1   // Required alignment flag
+        , size_t I1           // Required subvector offset
+        , size_t N1           // Required size of the subvector
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF2   // Present alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t I2           // Present subvector offset
+        , size_t N2           // Present size of the subvector
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( Subvector<VT,AF2,TF,DF,I2,N2>&& sv, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   BLAZE_STATIC_ASSERT_MSG( I1 + N1 <= N2, "Invalid subvector specification" );
+
+   return subvector<AF1,I1+I2,N1>( sv.operand(), args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of another subvector.
+// \ingroup subvector
+//
+// \param sv The given subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the other subvector.
+// \exception std::invalid_argument Invalid subvector specification.
+//
 // This function returns an expression representing the specified subvector of the given subvector.
+*/
+template< AlignmentFlag AF1   // Required alignment flag
+        , size_t I            // Index of the first subvector element
+        , size_t N            // Size of the subvector
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF2   // Present alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( Subvector<VT,AF2,TF,DF>& sv, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<RSAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      if( I + N > sv.size() ) {
+         BLAZE_THROW_INVALID_ARGUMENT( "Invalid subvector specification" );
+      }
+   }
+   else {
+      BLAZE_USER_ASSERT( I + N <= sv.size(), "Invalid subvector specification" );
+   }
+
+   return subvector<AF1>( sv.operand(), sv.offset() + I, N, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of another constant subvector.
+// \ingroup subvector
+//
+// \param sv The given constant subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the other subvector.
+// \exception std::invalid_argument Invalid subvector specification.
+//
+// This function returns an expression representing the specified subvector of the given constant
+// subvector.
 */
 template< AlignmentFlag AF1   // Required alignment flag
         , size_t I            // Index of the first subvector element
@@ -1202,19 +1319,106 @@ inline decltype(auto) subvector( const Subvector<VT,AF2,TF,DF>& sv, RSAs... args
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of another temporary subvector.
+// \ingroup subvector
+//
+// \param sv The given temporary subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the other subvector.
+// \exception std::invalid_argument Invalid subvector specification.
+//
+// This function returns an expression representing the specified subvector of the given temporary
+// subvector.
+*/
+template< AlignmentFlag AF1   // Required alignment flag
+        , size_t I            // Index of the first subvector element
+        , size_t N            // Size of the subvector
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF2   // Present alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto) subvector( Subvector<VT,AF2,TF,DF>&& sv, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<RSAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      if( I + N > sv.size() ) {
+         BLAZE_THROW_INVALID_ARGUMENT( "Invalid subvector specification" );
+      }
+   }
+   else {
+      BLAZE_USER_ASSERT( I + N <= sv.size(), "Invalid subvector specification" );
+   }
+
+   return subvector<AF1>( sv.operand(), sv.offset() + I, N, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
 /*!\brief Creating a view on a specific subvector of another subvector.
 // \ingroup subvector
 //
-// \param sv The constant subvector.
+// \param sv The given subvector.
 // \param index The index of the first element of the subvector.
 // \param size The size of the subvector.
 // \param args The optional subvector arguments.
 // \return View on the specified subvector of the other subvector.
+// \exception std::invalid_argument Invalid subvector specification.
 //
 // This function returns an expression representing the specified subvector of the given subvector.
 */
 template< AlignmentFlag AF1   // Required alignment flag
-        , typename VT         // Type of the dense vector
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF2   // Present alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t... CSAs      // Compile time subvector arguments
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto)
+   subvector( Subvector<VT,AF2,TF,DF,CSAs...>& sv, size_t index, size_t size, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<RSAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      if( index + size > sv.size() ) {
+         BLAZE_THROW_INVALID_ARGUMENT( "Invalid subvector specification" );
+      }
+   }
+   else {
+      BLAZE_USER_ASSERT( index + size <= sv.size(), "Invalid subvector specification" );
+   }
+
+   return subvector<AF1>( sv.operand(), sv.offset() + index, size, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of another constant subvector.
+// \ingroup subvector
+//
+// \param sv The given constant subvector.
+// \param index The index of the first element of the subvector.
+// \param size The size of the subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the other subvector.
+// \exception std::invalid_argument Invalid subvector specification.
+//
+// This function returns an expression representing the specified subvector of the given constant
+// subvector.
+*/
+template< AlignmentFlag AF1   // Required alignment flag
+        , typename VT         // Type of the vector
         , AlignmentFlag AF2   // Present alignment flag
         , bool TF             // Transpose flag
         , bool DF             // Density flag
@@ -1237,6 +1441,418 @@ inline decltype(auto)
    }
 
    return subvector<AF1>( sv.operand(), sv.offset() + index, size, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a specific subvector of another temporary subvector.
+// \ingroup subvector
+//
+// \param sv The given temporary subvector.
+// \param index The index of the first element of the subvector.
+// \param size The size of the subvector.
+// \param args The optional subvector arguments.
+// \return View on the specified subvector of the other subvector.
+// \exception std::invalid_argument Invalid subvector specification.
+//
+// This function returns an expression representing the specified subvector of the given temporary
+// subvector.
+*/
+template< AlignmentFlag AF1   // Required alignment flag
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF2   // Present alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t... CSAs      // Compile time subvector arguments
+        , typename... RSAs >  // Optional subvector arguments
+inline decltype(auto)
+   subvector( Subvector<VT,AF2,TF,DF,CSAs...>&& sv, size_t index, size_t size, RSAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<RSAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      if( index + size > sv.size() ) {
+         BLAZE_THROW_INVALID_ARGUMENT( "Invalid subvector specification" );
+      }
+   }
+   else {
+      BLAZE_USER_ASSERT( index + size <= sv.size(), "Invalid subvector specification" );
+   }
+
+   return subvector<AF1>( sv.operand(), sv.offset() + index, size, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  GLOBAL RESTRUCTURING FUNCTIONS (ELEMENTS)
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a selection of elements on a subvector.
+// \ingroup subvector
+//
+// \param sv The given subvector.
+// \param args The optional element arguments.
+// \return View on the specified selection of elements on the subvector.
+//
+// This function returns an expression representing the specified selection of elements on the
+// given subvector.
+*/
+template< size_t I1           // First element index
+        , size_t... Is        // Remaining element indices
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF    // Alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t I2           // Index of the first subvector element
+        , size_t N            // Size of the subvector
+        , typename... REAs >  // Optional element arguments
+inline decltype(auto)
+   elements( Subvector<VT,AF,TF,DF,I2,N>& sv, REAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   return elements( sv.operand(), make_shifted_index_subsequence<I2,N,I1,Is...>(), args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a selection of elements on a constant subvector.
+// \ingroup subvector
+//
+// \param sv The given constant subvector.
+// \param args The optional element arguments.
+// \return View on the specified selection of elements on the subvector.
+//
+// This function returns an expression representing the specified selection of elements on the
+// given constant subvector.
+*/
+template< size_t I1           // First element index
+        , size_t... Is        // Remaining element indices
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF    // Alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t I2           // Index of the first subvector element
+        , size_t N            // Size of the subvector
+        , typename... REAs >  // Optional element arguments
+inline decltype(auto)
+   elements( const Subvector<VT,AF,TF,DF,I2,N>& sv, REAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   return elements( sv.operand(), make_shifted_index_subsequence<I2,N,I1,Is...>(), args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a selection of elements on a temporary subvector.
+// \ingroup subvector
+//
+// \param sv The given temporary subvector.
+// \param args The optional element arguments.
+// \return View on the specified selection of elements on the subvector.
+//
+// This function returns an expression representing the specified selection of elements on the
+// given temporary subvector.
+*/
+template< size_t I1           // First element index
+        , size_t... Is        // Remaining element indices
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF    // Alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t I2           // Index of the first subvector element
+        , size_t N            // Size of the subvector
+        , typename... REAs >  // Optional element arguments
+inline decltype(auto)
+   elements( Subvector<VT,AF,TF,DF,I2,N>&& sv, REAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   return elements( sv.operand(), make_shifted_index_subsequence<I2,N,I1,Is...>(), args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a selection of elements on a subvector.
+// \ingroup subvector
+//
+// \param sv The given subvector.
+// \param args The optional element arguments.
+// \return View on the specified selection of elements on the subvector.
+// \exception std::invalid_argument Invalid elements specification.
+//
+// This function returns an expression representing the specified selection of elements on the
+// given subvector.
+*/
+template< size_t I            // First element index
+        , size_t... Is        // Remaining element indices
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF    // Alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , typename... REAs >  // Optional element arguments
+inline decltype(auto) elements( Subvector<VT,AF,TF,DF>& sv, REAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<REAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      static constexpr size_t indices[] = { I, Is... };
+      for( size_t i=0UL; i<sizeof...(Is)+1UL; ++i ) {
+         if( sv.size() <= indices[i] ) {
+            BLAZE_THROW_INVALID_ARGUMENT( "Invalid elements specification" );
+         }
+      }
+   }
+
+   return elements( sv.operand(), { I+sv.offset(), Is+sv.offset()... }, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a selection of elements on a constant subvector.
+// \ingroup subvector
+//
+// \param sv The given constant subvector.
+// \param args The optional element arguments.
+// \return View on the specified selection of elements on the subvector.
+// \exception std::invalid_argument Invalid elements specification.
+//
+// This function returns an expression representing the specified selection of elements on the
+// given constant subvector.
+*/
+template< size_t I            // First element index
+        , size_t... Is        // Remaining element indices
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF    // Alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , typename... REAs >  // Optional element arguments
+inline decltype(auto) elements( const Subvector<VT,AF,TF,DF>& sv, REAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<REAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      static constexpr size_t indices[] = { I, Is... };
+      for( size_t i=0UL; i<sizeof...(Is)+1UL; ++i ) {
+         if( sv.size() <= indices[i] ) {
+            BLAZE_THROW_INVALID_ARGUMENT( "Invalid elements specification" );
+         }
+      }
+   }
+
+   return elements( sv.operand(), { I+sv.offset(), Is+sv.offset()... }, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a selection of elements on a temporary subvector.
+// \ingroup subvector
+//
+// \param sv The given temporary subvector.
+// \param args The optional element arguments.
+// \return View on the specified selection of elements on the subvector.
+// \exception std::invalid_argument Invalid elements specification.
+//
+// This function returns an expression representing the specified selection of elements on the
+// given temporary subvector.
+*/
+template< size_t I            // First element index
+        , size_t... Is        // Remaining element indices
+        , typename VT         // Type of the vector
+        , AlignmentFlag AF    // Alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , typename... REAs >  // Optional element arguments
+inline decltype(auto) elements( Subvector<VT,AF,TF,DF>&& sv, REAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<REAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      static constexpr size_t indices[] = { I, Is... };
+      for( size_t i=0UL; i<sizeof...(Is)+1UL; ++i ) {
+         if( sv.size() <= indices[i] ) {
+            BLAZE_THROW_INVALID_ARGUMENT( "Invalid elements specification" );
+         }
+      }
+   }
+
+   return elements( sv.operand(), { I+sv.offset(), Is+sv.offset()... }, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a selection of elements on a subvector.
+// \ingroup subvector
+//
+// \param sv The given subvector.
+// \param indices The container of element indices.
+// \param n The total number of indices.
+// \param args The optional element arguments.
+// \return View on the specified selection of elements on the subvector.
+// \exception std::invalid_argument Invalid elements specification.
+//
+// This function returns an expression representing the specified selection of elements on the
+// given subvector.
+*/
+template< typename VT         // Type of the vector
+        , AlignmentFlag AF    // Alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t... CSAs      // Compile time subvector arguments
+        , typename T          // Type of the element indices
+        , typename... REAs >  // Optional element arguments
+inline decltype(auto)
+   elements( Subvector<VT,AF,TF,DF,CSAs...>& sv, const T* indices, size_t n, REAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<REAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      for( size_t i=0UL; i<n; ++i ) {
+         if( sv.size() <= indices[i] ) {
+            BLAZE_THROW_INVALID_ARGUMENT( "Invalid elements specification" );
+         }
+      }
+   }
+
+   SmallVector<size_t,128UL> newIndices( indices, indices+n );
+   std::for_each( newIndices.begin(), newIndices.end(),
+                  [offset=sv.offset()]( size_t& index ){ index += offset; } );
+
+   return elements( sv.operand(), newIndices.data(), n, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a selection of elements on a constant subvector.
+// \ingroup subvector
+//
+// \param sv The given constant subvector.
+// \param indices The container of element indices.
+// \param n The total number of indices.
+// \param args The optional element arguments.
+// \return View on the specified selection of elements on the subvector.
+// \exception std::invalid_argument Invalid elements specification.
+//
+// This function returns an expression representing the specified selection of elements on the
+// given constant subvector.
+*/
+template< typename VT         // Type of the vector
+        , AlignmentFlag AF    // Alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t... CSAs      // Compile time subvector arguments
+        , typename T          // Type of the element indices
+        , typename... REAs >  // Optional element arguments
+inline decltype(auto)
+   elements( const Subvector<VT,AF,TF,DF,CSAs...>& sv, const T* indices, size_t n, REAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<REAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      for( size_t i=0UL; i<n; ++i ) {
+         if( sv.size() <= indices[i] ) {
+            BLAZE_THROW_INVALID_ARGUMENT( "Invalid elements specification" );
+         }
+      }
+   }
+
+   SmallVector<size_t,128UL> newIndices( indices, indices+n );
+   std::for_each( newIndices.begin(), newIndices.end(),
+                  [offset=sv.offset()]( size_t& index ){ index += offset; } );
+
+   return elements( sv.operand(), newIndices.data(), n, args... );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Creating a view on a selection of elements on a temporary subvector.
+// \ingroup subvector
+//
+// \param sv The given temporary subvector.
+// \param indices The container of element indices.
+// \param n The total number of indices.
+// \param args The optional element arguments.
+// \return View on the specified selection of elements on the subvector.
+// \exception std::invalid_argument Invalid elements specification.
+//
+// This function returns an expression representing the specified selection of elements on the
+// given temporary subvector.
+*/
+template< typename VT         // Type of the vector
+        , AlignmentFlag AF    // Alignment flag
+        , bool TF             // Transpose flag
+        , bool DF             // Density flag
+        , size_t... CSAs      // Compile time subvector arguments
+        , typename T          // Type of the element indices
+        , typename... REAs >  // Optional element arguments
+inline decltype(auto)
+   elements( Subvector<VT,AF,TF,DF,CSAs...>&& sv, const T* indices, size_t n, REAs... args )
+{
+   BLAZE_FUNCTION_TRACE;
+
+   constexpr bool isChecked( !Contains< TypeList<REAs...>, Unchecked >::value );
+
+   if( isChecked ) {
+      for( size_t i=0UL; i<n; ++i ) {
+         if( sv.size() <= indices[i] ) {
+            BLAZE_THROW_INVALID_ARGUMENT( "Invalid elements specification" );
+         }
+      }
+   }
+
+   SmallVector<size_t,128UL> newIndices( indices, indices+n );
+   std::for_each( newIndices.begin(), newIndices.end(),
+                  [offset=sv.offset()]( size_t& index ){ index += offset; } );
+
+   return elements( sv.operand(), newIndices.data(), n, args... );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1424,7 +2040,7 @@ inline bool isDefault( const Subvector<VT,AF,TF,false,CSAs...>& sv )
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
-/*!\brief Returns whether the invariants of the given subvector vector are intact.
+/*!\brief Returns whether the invariants of the given subvector are intact.
 // \ingroup subvector
 //
 // \param sv The subvector to be tested.
@@ -1456,7 +2072,7 @@ inline bool isIntact( const Subvector<VT,AF,TF,DF,CSAs...>& sv ) noexcept
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
-/*!\brief Returns whether the given vector and subvector represent the same observable state.
+/*!\brief Returns whether the given subvector and vector represent the same observable state.
 // \ingroup subvector
 //
 // \param a The subvector to be tested for its state.
@@ -1500,7 +2116,7 @@ template< typename VT       // Type of the vector
         , size_t... CSAs >  // Compile time subvector arguments
 inline bool isSame( const Vector<VT,TF>& a, const Subvector<VT,AF,TF,DF,CSAs...>& b ) noexcept
 {
-   return ( isSame( ~a, b.operand() ) && ( (~a).size() == b.size() ) );
+   return isSame( b, a );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1547,8 +2163,8 @@ inline bool isSame( const Subvector<VT1,AF1,TF1,DF1,CSAs1...>& a,
 //
 // \param sv The target subvector.
 // \param index The index of the element to be set.
-// \param value The value of the element to be set.
-// \return \a true in case the set operation would be successful, \a false if not.
+// \param value The value to be set to the element.
+// \return \a true in case the operation would be successful, \a false if not.
 //
 // This function must \b NOT be called explicitly! It is used internally for the performance
 // optimized evaluation of expression templates. Calling this function explicitly might result
@@ -1563,9 +2179,201 @@ template< typename VT       // Type of the vector
         , typename ET >     // Type of the element
 inline bool trySet( const Subvector<VT,AF,TF,DF,CSAs...>& sv, size_t index, const ET& value )
 {
-   BLAZE_INTERNAL_ASSERT( index <= sv.size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index < sv.size(), "Invalid vector access index" );
 
    return trySet( sv.operand(), sv.offset()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by adding to a single element of a subvector.
+// \ingroup subvector
+//
+// \param sv The target subvector.
+// \param index The index of the element to be modified.
+// \param value The value to be added to the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename VT       // Type of the vector
+        , AlignmentFlag AF  // Alignment flag
+        , bool TF           // Transpose flag
+        , bool DF           // Density flag
+        , size_t... CSAs    // Compile time subvector arguments
+        , typename ET >     // Type of the element
+inline bool tryAdd( const Subvector<VT,AF,TF,DF,CSAs...>& sv, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < sv.size(), "Invalid vector access index" );
+
+   return tryAdd( sv.operand(), sv.offset()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by subtracting from a single element of a subvector.
+// \ingroup subvector
+//
+// \param sv The target subvector.
+// \param index The index of the element to be modified.
+// \param value The value to be subtracting from the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename VT       // Type of the vector
+        , AlignmentFlag AF  // Alignment flag
+        , bool TF           // Transpose flag
+        , bool DF           // Density flag
+        , size_t... CSAs    // Compile time subvector arguments
+        , typename ET >     // Type of the element
+inline bool trySub( const Subvector<VT,AF,TF,DF,CSAs...>& sv, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < sv.size(), "Invalid vector access index" );
+
+   return trySub( sv.operand(), sv.offset()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a subvector.
+// \ingroup subvector
+//
+// \param sv The target subvector.
+// \param index The index of the element to be modified.
+// \param value The factor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename VT       // Type of the vector
+        , AlignmentFlag AF  // Alignment flag
+        , bool TF           // Transpose flag
+        , bool DF           // Density flag
+        , size_t... CSAs    // Compile time subvector arguments
+        , typename ET >     // Type of the element
+inline bool tryMult( const Subvector<VT,AF,TF,DF,CSAs...>& sv, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < sv.size(), "Invalid vector access index" );
+
+   return tryMult( sv.operand(), sv.offset()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a subvector.
+// \ingroup subvector
+//
+// \param sv The target subvector.
+// \param index The index of the first element of the range to be modified.
+// \param size The number of elements of the range to be modified.
+// \param value The factor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename VT       // Type of the vector
+        , AlignmentFlag AF  // Alignment flag
+        , bool TF           // Transpose flag
+        , bool DF           // Density flag
+        , size_t... CSAs    // Compile time subvector arguments
+        , typename ET >     // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryMult( const Subvector<VT,AF,TF,DF,CSAs...>& sv, size_t index, size_t size, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index <= (~sv).size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index + size <= (~sv).size(), "Invalid range size" );
+
+   return tryMult( sv.operand(), sv.offset()+index, size, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a subvector.
+// \ingroup subvector
+//
+// \param sv The target subvector.
+// \param index The index of the element to be modified.
+// \param value The divisor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename VT       // Type of the vector
+        , AlignmentFlag AF  // Alignment flag
+        , bool TF           // Transpose flag
+        , bool DF           // Density flag
+        , size_t... CSAs    // Compile time subvector arguments
+        , typename ET >     // Type of the element
+inline bool tryDiv( const Subvector<VT,AF,TF,DF,CSAs...>& sv, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < sv.size(), "Invalid vector access index" );
+
+   return tryDiv( sv.operand(), sv.offset()+index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a subvector.
+// \ingroup subvector
+//
+// \param sv The target subvector.
+// \param index The index of the first element of the range to be modified.
+// \param size The number of elements of the range to be modified.
+// \param value The divisor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename VT       // Type of the vector
+        , AlignmentFlag AF  // Alignment flag
+        , bool TF           // Transpose flag
+        , bool DF           // Density flag
+        , size_t... CSAs    // Compile time subvector arguments
+        , typename ET >     // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryDiv( const Subvector<VT,AF,TF,DF,CSAs...>& sv, size_t index, size_t size, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index <= (~sv).size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index + size <= (~sv).size(), "Invalid range size" );
+
+   return tryDiv( sv.operand(), sv.offset()+index, size, value );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1596,7 +2404,7 @@ inline bool tryAssign( const Subvector<VT1,AF,TF,DF,CSAs...>& lhs,
                        const Vector<VT2,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryAssign( lhs.operand(), ~rhs, lhs.offset() + index );
 }
@@ -1629,7 +2437,7 @@ inline bool tryAddAssign( const Subvector<VT1,AF,TF,DF,CSAs...>& lhs,
                           const Vector<VT2,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryAddAssign( lhs.operand(), ~rhs, lhs.offset() + index );
 }
@@ -1662,7 +2470,7 @@ inline bool trySubAssign( const Subvector<VT1,AF,TF,DF,CSAs...>& lhs,
                           const Vector<VT2,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return trySubAssign( lhs.operand(), ~rhs, lhs.offset() + index );
 }
@@ -1695,7 +2503,7 @@ inline bool tryMultAssign( const Subvector<VT1,AF,TF,DF,CSAs...>& lhs,
                            const Vector<VT2,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryMultAssign( lhs.operand(), ~rhs, lhs.offset() + index );
 }
@@ -1728,7 +2536,7 @@ inline bool tryDivAssign( const Subvector<VT1,AF,TF,DF,CSAs...>& lhs,
                           const Vector<VT2,TF>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryDivAssign( lhs.operand(), ~rhs, lhs.offset() + index );
 }
@@ -1933,6 +2741,24 @@ struct HasMutableDataAccess< Subvector<VT,AF,TF,true,CSAs...> >
 template< typename VT, bool TF, size_t... CSAs >
 struct IsAligned< Subvector<VT,aligned,TF,true,CSAs...> >
    : public TrueType
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ISCONTIGUOUS SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename VT, AlignmentFlag AF, bool TF, size_t... CSAs >
+struct IsContiguous< Subvector<VT,AF,TF,true,CSAs...> >
+   : public IsContiguous<VT>
 {};
 /*! \endcond */
 //*************************************************************************************************

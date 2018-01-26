@@ -3,7 +3,7 @@
 //  \file blazetest/mathtest/row/SparseSymmetricTest.h
 //  \brief Header file for the Row sparse symmetric test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -91,29 +91,30 @@ class SparseSymmetricTest
    /*!\name Test functions */
    //@{
    void testConstructors();
-   void testAssignment  ();
-   void testAddAssign   ();
-   void testSubAssign   ();
-   void testMultAssign  ();
-   void testDivAssign   ();
-   void testCrossAssign ();
-   void testScaling     ();
-   void testSubscript   ();
-   void testIterator    ();
-   void testNonZeros    ();
-   void testReset       ();
-   void testClear       ();
-   void testReserve     ();
-   void testSet         ();
-   void testInsert      ();
-   void testAppend      ();
-   void testErase       ();
-   void testFind        ();
-   void testLowerBound  ();
-   void testUpperBound  ();
-   void testIsDefault   ();
-   void testIsSame      ();
-   void testSubvector   ();
+   void testAssignment();
+   void testAddAssign();
+   void testSubAssign();
+   void testMultAssign();
+   void testDivAssign();
+   void testCrossAssign();
+   void testScaling();
+   void testSubscript();
+   void testIterator();
+   void testNonZeros();
+   void testReset();
+   void testClear();
+   void testReserve();
+   void testSet();
+   void testInsert();
+   void testAppend();
+   void testErase();
+   void testFind();
+   void testLowerBound();
+   void testUpperBound();
+   void testIsDefault();
+   void testIsSame();
+   void testSubvector();
+   void testElements();
 
    template< typename Type >
    void checkSize( const Type& row, size_t expectedSize ) const;
@@ -144,8 +145,8 @@ class SparseSymmetricTest
 
    //**Type definitions****************************************************************************
    using SMT = blaze::CompressedMatrix<int,blaze::rowMajor>;  //!< Row-major compressed matrix type.
-   using MT  = blaze::SymmetricMatrix<SMT>;                   //!< Row-major compressed matrix type.
-   using OMT = MT::OppositeType;                              //!< Column-major compressed matrix type.
+   using MT  = blaze::SymmetricMatrix<SMT>;                   //!< Symmetric row-major matrix type.
+   using OMT = MT::OppositeType;                              //!< Symmetric column-major matrix type.
    using RT  = blaze::Row<MT>;                                //!< Sparse row type for row-major matrices.
    using ORT = blaze::Row<OMT>;                               //!< Sparse row type for column-major matrices.
    //**********************************************************************************************

@@ -3,7 +3,7 @@
 //  \file blaze/math/views/column/Dense.h
 //  \brief Column specialization for dense matrices
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -50,6 +50,7 @@
 #include <blaze/math/constraints/DenseVector.h>
 #include <blaze/math/constraints/RequiresEvaluation.h>
 #include <blaze/math/constraints/RowMajorMatrix.h>
+#include <blaze/math/constraints/Submatrix.h>
 #include <blaze/math/constraints/Symmetric.h>
 #include <blaze/math/constraints/TransExpr.h>
 #include <blaze/math/constraints/UniTriangular.h>
@@ -63,6 +64,7 @@
 #include <blaze/math/SIMD.h>
 #include <blaze/math/traits/ColumnTrait.h>
 #include <blaze/math/traits/CrossTrait.h>
+#include <blaze/math/typetraits/HasMutableDataAccess.h>
 #include <blaze/math/typetraits/HasSIMDAdd.h>
 #include <blaze/math/typetraits/HasSIMDDiv.h>
 #include <blaze/math/typetraits/HasSIMDMult.h>
@@ -100,7 +102,6 @@
 #include <blaze/util/TypeList.h>
 #include <blaze/util/Types.h>
 #include <blaze/util/typetraits/IsConst.h>
-#include <blaze/util/typetraits/IsNumeric.h>
 #include <blaze/util/typetraits/IsReference.h>
 #include <blaze/util/typetraits/RemoveReference.h>
 
@@ -155,10 +156,10 @@ class Column<MT,true,true,SF,CCAs...>
    using Reference = If_< IsConst<MT>, ConstReference, Reference_<MT> >;
 
    //! Pointer to a constant column value.
-   using ConstPointer = const ElementType*;
+   using ConstPointer = ConstPointer_<MT>;
 
    //! Pointer to a non-constant column value.
-   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, ElementType* >;
+   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, Pointer_<MT> >;
 
    //! Iterator over constant elements.
    using ConstIterator = ConstIterator_<MT>;
@@ -219,12 +220,6 @@ class Column<MT,true,true,SF,CCAs...>
    template< typename VT > inline Column& operator*=( const Vector<VT,false>& rhs );
    template< typename VT > inline Column& operator/=( const DenseVector<VT,false>&  rhs );
    template< typename VT > inline Column& operator%=( const Vector<VT,false>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Column >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Column >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -233,12 +228,14 @@ class Column<MT,true,true,SF,CCAs...>
    //@{
    using DataType::column;
 
-   inline Operand operand() const noexcept;
-   inline size_t  size() const noexcept;
-   inline size_t  spacing() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  nonZeros() const;
-   inline void    reset();
+   inline MT&       operand() noexcept;
+   inline const MT& operand() const noexcept;
+
+   inline size_t size() const noexcept;
+   inline size_t spacing() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t nonZeros() const;
+   inline void   reset();
    //@}
    //**********************************************************************************************
 
@@ -394,6 +391,7 @@ class Column<MT,true,true,SF,CCAs...>
    BLAZE_CONSTRAINT_MUST_BE_COLUMN_MAJOR_MATRIX_TYPE( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_COMPUTATION_TYPE    ( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_TRANSEXPR_TYPE      ( MT );
+   BLAZE_CONSTRAINT_MUST_NOT_BE_SUBMATRIX_TYPE      ( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_POINTER_TYPE        ( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_REFERENCE_TYPE      ( MT );
    //**********************************************************************************************
@@ -406,7 +404,7 @@ class Column<MT,true,true,SF,CCAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -794,6 +792,7 @@ inline Column<MT,true,true,SF,CCAs...>&
    }
 
    decltype(auto) left( derestrict( *this ) );
+
    std::fill( std::copy( list.begin(), list.end(), left.begin() ), left.end(), ElementType() );
 
    BLAZE_INTERNAL_ASSERT( isIntact( matrix_ ), "Invariant violation detected" );
@@ -1169,62 +1168,6 @@ inline Column<MT,true,true,SF,CCAs...>&
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a dense column and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the vector.
-//
-// This operator cannot be used for columns on lower or upper unitriangular matrices. The attempt
-// to scale such a row results in a compilation error!
-*/
-template< typename MT       // Type of the dense matrix
-        , bool SF           // Symmetry flag
-        , size_t... CCAs >  // Compile time column arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Column<MT,true,true,SF,CCAs...> >&
-   Column<MT,true,true,SF,CCAs...>::operator*=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   return operator=( (*this) * rhs );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a dense column by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the vector.
-//
-// This operator cannot be used for columns on lower or upper unitriangular matrices. The attempt
-// to scale such a row results in a compilation error!
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename MT       // Type of the dense matrix
-        , bool SF           // Symmetry flag
-        , size_t... CCAs >  // Compile time column arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Column<MT,true,true,SF,CCAs...> >&
-   Column<MT,true,true,SF,CCAs...>::operator/=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   return operator=( (*this) / rhs );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -1242,8 +1185,24 @@ inline EnableIf_< IsNumeric<Other>, Column<MT,true,true,SF,CCAs...> >&
 template< typename MT       // Type of the dense matrix
         , bool SF           // Symmetry flag
         , size_t... CCAs >  // Compile time column arguments
-inline typename Column<MT,true,true,SF,CCAs...>::Operand
-   Column<MT,true,true,SF,CCAs...>::operand() const noexcept
+inline MT& Column<MT,true,true,SF,CCAs...>::operand() noexcept
+{
+   return matrix_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the matrix containing the column.
+//
+// \return The matrix containing the column.
+*/
+template< typename MT       // Type of the dense matrix
+        , bool SF           // Symmetry flag
+        , size_t... CCAs >  // Compile time column arguments
+inline const MT& Column<MT,true,true,SF,CCAs...>::operand() const noexcept
 {
    return matrix_;
 }
@@ -2324,28 +2283,35 @@ class Column<MT,false,true,false,CCAs...>
    using Reference = If_< IsConst<MT>, ConstReference, Reference_<MT> >;
 
    //! Pointer to a constant column value.
-   using ConstPointer = const ElementType*;
+   using ConstPointer = ConstPointer_<MT>;
 
    //! Pointer to a non-constant column value.
-   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, ElementType* >;
+   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, Pointer_<MT> >;
    //**********************************************************************************************
 
    //**ColumnIterator class definition*************************************************************
    /*!\brief Iterator over the elements of the dense column.
    */
-   template< typename MatrixType >  // Type of the dense matrix
+   template< typename MatrixType      // Type of the dense matrix
+           , typename IteratorType >  // Type of the dense matrix iterator
    class ColumnIterator
    {
     public:
       //**Type definitions*************************************************************************
-      //! Return type for the access to the value of a dense element.
-      using Reference = If_< IsConst<MatrixType>, ConstReference_<MatrixType>, Reference_<MatrixType> >;
+      //! The iterator category.
+      using IteratorCategory = typename std::iterator_traits<IteratorType>::iterator_category;
 
-      using IteratorCategory = std::random_access_iterator_tag;  //!< The iterator category.
-      using ValueType        = RemoveReference_<Reference>;      //!< Type of the underlying elements.
-      using PointerType      = ValueType*;                       //!< Pointer return type.
-      using ReferenceType    = Reference;                        //!< Reference return type.
-      using DifferenceType   = ptrdiff_t;                        //!< Difference between two iterators.
+      //! Type of the underlying elements.
+      using ValueType = typename std::iterator_traits<IteratorType>::value_type;
+
+      //! Pointer return type.
+      using PointerType = typename std::iterator_traits<IteratorType>::pointer;
+
+      //! Reference return type.
+      using ReferenceType = typename std::iterator_traits<IteratorType>::reference;
+
+      //! Difference between two iterators.
+      using DifferenceType = typename std::iterator_traits<IteratorType>::difference_type;
 
       // STL iterator requirements
       using iterator_category = IteratorCategory;  //!< The iterator category.
@@ -2359,9 +2325,10 @@ class Column<MT,false,true,false,CCAs...>
       /*!\brief Default constructor of the ColumnIterator class.
       */
       inline ColumnIterator() noexcept
-         : matrix_( nullptr )  // The dense matrix containing the column.
-         , row_   ( 0UL )      // The current row index.
-         , column_( 0UL )      // The current column index.
+         : matrix_( nullptr )  // The dense matrix containing the column
+         , row_   ( 0UL )      // The current row index
+         , column_( 0UL )      // The current column index
+         , pos_   (     )      // Iterator to the current dense element
       {}
       //*******************************************************************************************
 
@@ -2373,10 +2340,14 @@ class Column<MT,false,true,false,CCAs...>
       // \param column The column index.
       */
       inline ColumnIterator( MatrixType& matrix, size_t row, size_t column ) noexcept
-         : matrix_( &matrix )  // The dense matrix containing the column.
-         , row_   ( row     )  // The current row index.
-         , column_( column  )  // The current column index.
-      {}
+         : matrix_( &matrix )  // The dense matrix containing the column
+         , row_   ( row     )  // The current row index
+         , column_( column  )  // The current column index
+         , pos_   (         )  // Iterator to the current dense element
+      {
+         if( row_ != matrix_->rows() )
+            pos_ = matrix_->begin( row_ ) + column_;
+      }
       //*******************************************************************************************
 
       //**Constructor******************************************************************************
@@ -2384,11 +2355,12 @@ class Column<MT,false,true,false,CCAs...>
       //
       // \param it The column iterator to be copied.
       */
-      template< typename MatrixType2 >
-      inline ColumnIterator( const ColumnIterator<MatrixType2>& it ) noexcept
-         : matrix_( it.matrix_ )  // The dense matrix containing the column.
-         , row_   ( it.row_    )  // The current row index.
-         , column_( it.column_ )  // The current column index.
+      template< typename MatrixType2, typename IteratorType2 >
+      inline ColumnIterator( const ColumnIterator<MatrixType2,IteratorType2>& it ) noexcept
+         : matrix_( it.matrix_ )  // The dense matrix containing the column
+         , row_   ( it.row_    )  // The current row index
+         , column_( it.column_ )  // The current column index
+         , pos_   ( it.pos_    )  // Iterator to the current dense element
       {}
       //*******************************************************************************************
 
@@ -2399,7 +2371,11 @@ class Column<MT,false,true,false,CCAs...>
       // \return The incremented iterator.
       */
       inline ColumnIterator& operator+=( size_t inc ) noexcept {
+         using blaze::reset;
          row_ += inc;
+         if( row_ != matrix_->rows() )
+            pos_ = matrix_->begin( row_ ) + column_;
+         else reset( pos_ );
          return *this;
       }
       //*******************************************************************************************
@@ -2411,7 +2387,11 @@ class Column<MT,false,true,false,CCAs...>
       // \return The decremented iterator.
       */
       inline ColumnIterator& operator-=( size_t dec ) noexcept {
+         using blaze::reset;
          row_ -= dec;
+         if( row_ != matrix_->rows() )
+            pos_ = matrix_->begin( row_ ) + column_;
+         else reset( pos_ );
          return *this;
       }
       //*******************************************************************************************
@@ -2422,7 +2402,11 @@ class Column<MT,false,true,false,CCAs...>
       // \return Reference to the incremented iterator.
       */
       inline ColumnIterator& operator++() noexcept {
+         using blaze::reset;
          ++row_;
+         if( row_ != matrix_->rows() )
+            pos_ = matrix_->begin( row_ ) + column_;
+         else reset( pos_ );
          return *this;
       }
       //*******************************************************************************************
@@ -2445,7 +2429,11 @@ class Column<MT,false,true,false,CCAs...>
       // \return Reference to the decremented iterator.
       */
       inline ColumnIterator& operator--() noexcept {
+         using blaze::reset;
          --row_;
+         if( row_ != matrix_->rows() )
+            pos_ = matrix_->begin( row_ ) + column_;
+         else reset( pos_ );
          return *this;
       }
       //*******************************************************************************************
@@ -2469,7 +2457,9 @@ class Column<MT,false,true,false,CCAs...>
       // \return Reference to the accessed value.
       */
       inline ReferenceType operator[]( size_t index ) const {
-         return (*matrix_)(row_+index,column_);
+         BLAZE_USER_ASSERT( row_+index < matrix_->rows(), "Invalid access index detected" );
+         const IteratorType pos( matrix_->begin( row_+index ) + column_ );
+         return *pos;
       }
       //*******************************************************************************************
 
@@ -2479,7 +2469,7 @@ class Column<MT,false,true,false,CCAs...>
       // \return The current value of the dense element.
       */
       inline ReferenceType operator*() const {
-         return (*matrix_)(row_,column_);
+         return *pos_;
       }
       //*******************************************************************************************
 
@@ -2489,7 +2479,7 @@ class Column<MT,false,true,false,CCAs...>
       // \return Reference to the dense vector element at the current iterator position.
       */
       inline PointerType operator->() const {
-         return &(*matrix_)(row_,column_);
+         return pos_;
       }
       //*******************************************************************************************
 
@@ -2499,8 +2489,8 @@ class Column<MT,false,true,false,CCAs...>
       // \param rhs The right-hand side column iterator.
       // \return \a true if the iterators refer to the same element, \a false if not.
       */
-      template< typename MatrixType2 >
-      inline bool operator==( const ColumnIterator<MatrixType2>& rhs ) const noexcept {
+      template< typename MatrixType2, typename IteratorType2 >
+      inline bool operator==( const ColumnIterator<MatrixType2,IteratorType2>& rhs ) const noexcept {
          return row_ == rhs.row_;
       }
       //*******************************************************************************************
@@ -2511,8 +2501,8 @@ class Column<MT,false,true,false,CCAs...>
       // \param rhs The right-hand side column iterator.
       // \return \a true if the iterators don't refer to the same element, \a false if they do.
       */
-      template< typename MatrixType2 >
-      inline bool operator!=( const ColumnIterator<MatrixType2>& rhs ) const noexcept {
+      template< typename MatrixType2, typename IteratorType2 >
+      inline bool operator!=( const ColumnIterator<MatrixType2,IteratorType2>& rhs ) const noexcept {
          return !( *this == rhs );
       }
       //*******************************************************************************************
@@ -2523,8 +2513,8 @@ class Column<MT,false,true,false,CCAs...>
       // \param rhs The right-hand side column iterator.
       // \return \a true if the left-hand side iterator is smaller, \a false if not.
       */
-      template< typename MatrixType2 >
-      inline bool operator<( const ColumnIterator<MatrixType2>& rhs ) const noexcept {
+      template< typename MatrixType2, typename IteratorType2 >
+      inline bool operator<( const ColumnIterator<MatrixType2,IteratorType2>& rhs ) const noexcept {
          return row_ < rhs.row_;
       }
       //*******************************************************************************************
@@ -2535,8 +2525,8 @@ class Column<MT,false,true,false,CCAs...>
       // \param rhs The right-hand side column iterator.
       // \return \a true if the left-hand side iterator is greater, \a false if not.
       */
-      template< typename MatrixType2 >
-      inline bool operator>( const ColumnIterator<MatrixType2>& rhs ) const noexcept {
+      template< typename MatrixType2, typename IteratorType2 >
+      inline bool operator>( const ColumnIterator<MatrixType2,IteratorType2>& rhs ) const noexcept {
          return row_ > rhs.row_;
       }
       //*******************************************************************************************
@@ -2547,8 +2537,8 @@ class Column<MT,false,true,false,CCAs...>
       // \param rhs The right-hand side column iterator.
       // \return \a true if the left-hand side iterator is smaller or equal, \a false if not.
       */
-      template< typename MatrixType2 >
-      inline bool operator<=( const ColumnIterator<MatrixType2>& rhs ) const noexcept {
+      template< typename MatrixType2, typename IteratorType2 >
+      inline bool operator<=( const ColumnIterator<MatrixType2,IteratorType2>& rhs ) const noexcept {
          return row_ <= rhs.row_;
       }
       //*******************************************************************************************
@@ -2559,8 +2549,8 @@ class Column<MT,false,true,false,CCAs...>
       // \param rhs The right-hand side column iterator.
       // \return \a true if the left-hand side iterator is greater or equal, \a false if not.
       */
-      template< typename MatrixType2 >
-      inline bool operator>=( const ColumnIterator<MatrixType2>& rhs ) const noexcept {
+      template< typename MatrixType2, typename IteratorType2 >
+      inline bool operator>=( const ColumnIterator<MatrixType2,IteratorType2>& rhs ) const noexcept {
          return row_ >= rhs.row_;
       }
       //*******************************************************************************************
@@ -2614,23 +2604,24 @@ class Column<MT,false,true,false,CCAs...>
 
     private:
       //**Member variables*************************************************************************
-      MatrixType* matrix_;  //!< The dense matrix containing the column.
-      size_t      row_;     //!< The current row index.
-      size_t      column_;  //!< The current column index.
+      MatrixType*  matrix_;  //!< The dense matrix containing the column.
+      size_t       row_;     //!< The current row index.
+      size_t       column_;  //!< The current column index.
+      IteratorType pos_;     //!< Iterator to the current dense element.
       //*******************************************************************************************
 
       //**Friend declarations**********************************************************************
-      template< typename MatrixType2 > friend class ColumnIterator;
+      template< typename MatrixType2, typename IteratorType2 > friend class ColumnIterator;
       //*******************************************************************************************
    };
    //**********************************************************************************************
 
    //**Type definitions****************************************************************************
    //! Iterator over constant elements.
-   using ConstIterator = ColumnIterator<const MT>;
+   using ConstIterator = ColumnIterator< const MT, ConstIterator_<MT> >;
 
    //! Iterator over non-constant elements.
-   using Iterator = If_< IsConst<MT>, ConstIterator, ColumnIterator<MT> >;
+   using Iterator = If_< IsConst<MT>, ConstIterator, ColumnIterator< MT, Iterator_<MT> > >;
    //**********************************************************************************************
 
    //**Compilation flags***************************************************************************
@@ -2685,12 +2676,6 @@ class Column<MT,false,true,false,CCAs...>
    template< typename VT > inline Column& operator*=( const Vector<VT,false>& rhs );
    template< typename VT > inline Column& operator/=( const DenseVector<VT,false>&  rhs );
    template< typename VT > inline Column& operator%=( const Vector<VT,false>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Column >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Column >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -2699,12 +2684,14 @@ class Column<MT,false,true,false,CCAs...>
    //@{
    using DataType::column;
 
-   inline Operand operand() const noexcept;
-   inline size_t  size() const noexcept;
-   inline size_t  spacing() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  nonZeros() const;
-   inline void    reset();
+   inline MT&       operand() noexcept;
+   inline const MT& operand() const noexcept;
+
+   inline size_t size() const noexcept;
+   inline size_t spacing() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t nonZeros() const;
+   inline void   reset();
    //@}
    //**********************************************************************************************
 
@@ -2763,6 +2750,7 @@ class Column<MT,false,true,false,CCAs...>
    BLAZE_CONSTRAINT_MUST_NOT_BE_SYMMETRIC_MATRIX_TYPE( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_COMPUTATION_TYPE     ( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_TRANSEXPR_TYPE       ( MT );
+   BLAZE_CONSTRAINT_MUST_NOT_BE_SUBMATRIX_TYPE       ( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_POINTER_TYPE         ( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_REFERENCE_TYPE       ( MT );
    //**********************************************************************************************
@@ -2775,7 +2763,7 @@ class Column<MT,false,true,false,CCAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -3148,6 +3136,7 @@ inline Column<MT,false,true,false,CCAs...>&
    }
 
    decltype(auto) left( derestrict( *this ) );
+
    std::fill( std::copy( list.begin(), list.end(), left.begin() ), left.end(), ElementType() );
 
    BLAZE_INTERNAL_ASSERT( isIntact( matrix_ ), "Invariant violation detected" );
@@ -3517,60 +3506,6 @@ inline Column<MT,false,true,false,CCAs...>&
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a dense column and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the vector.
-//
-// This operator cannot be used for columns on lower or upper unitriangular matrices. The attempt
-// to scale such a row results in a compilation error!
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CCAs >  // Compile time column arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Column<MT,false,true,false,CCAs...> >&
-   Column<MT,false,true,false,CCAs...>::operator*=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   return operator=( (*this) * rhs );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a dense column by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the vector.
-//
-// This operator cannot be used for columns on lower or upper unitriangular matrices. The attempt
-// to scale such a row results in a compilation error!
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CCAs >  // Compile time column arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Column<MT,false,true,false,CCAs...> >&
-   Column<MT,false,true,false,CCAs...>::operator/=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   return operator=( (*this) / rhs );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -3587,8 +3522,23 @@ inline EnableIf_< IsNumeric<Other>, Column<MT,false,true,false,CCAs...> >&
 */
 template< typename MT       // Type of the dense matrix
         , size_t... CCAs >  // Compile time column arguments
-inline typename Column<MT,false,true,false,CCAs...>::Operand
-   Column<MT,false,true,false,CCAs...>::operand() const noexcept
+inline MT& Column<MT,false,true,false,CCAs...>::operand() noexcept
+{
+   return matrix_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the matrix containing the column.
+//
+// \return The matrix containing the column.
+*/
+template< typename MT       // Type of the dense matrix
+        , size_t... CCAs >  // Compile time column arguments
+inline const MT& Column<MT,false,true,false,CCAs...>::operand() const noexcept
 {
    return matrix_;
 }
@@ -4223,10 +4173,10 @@ class Column<MT,false,true,true,CCAs...>
    using Reference = If_< IsConst<MT>, ConstReference, Reference_<MT> >;
 
    //! Pointer to a constant column value.
-   using ConstPointer = const ElementType*;
+   using ConstPointer = ConstPointer_<MT>;
 
    //! Pointer to a non-constant column value.
-   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, ElementType* >;
+   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, Pointer_<MT> >;
 
    //! Iterator over constant elements.
    using ConstIterator = ConstIterator_<MT>;
@@ -4287,12 +4237,6 @@ class Column<MT,false,true,true,CCAs...>
    template< typename VT > inline Column& operator*=( const Vector<VT,false>& rhs );
    template< typename VT > inline Column& operator/=( const DenseVector<VT,false>&  rhs );
    template< typename VT > inline Column& operator%=( const Vector<VT,false>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Column >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Column >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -4301,12 +4245,14 @@ class Column<MT,false,true,true,CCAs...>
    //@{
    using DataType::column;
 
-   inline Operand operand() const noexcept;
-   inline size_t  size() const noexcept;
-   inline size_t  spacing() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  nonZeros() const;
-   inline void    reset();
+   inline MT&       operand() noexcept;
+   inline const MT& operand() const noexcept;
+
+   inline size_t size() const noexcept;
+   inline size_t spacing() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t nonZeros() const;
+   inline void   reset();
    //@}
    //**********************************************************************************************
 
@@ -4463,6 +4409,7 @@ class Column<MT,false,true,true,CCAs...>
    BLAZE_CONSTRAINT_MUST_BE_SYMMETRIC_MATRIX_TYPE( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_COMPUTATION_TYPE ( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_TRANSEXPR_TYPE   ( MT );
+   BLAZE_CONSTRAINT_MUST_NOT_BE_SUBMATRIX_TYPE   ( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_POINTER_TYPE     ( MT );
    BLAZE_CONSTRAINT_MUST_NOT_BE_REFERENCE_TYPE   ( MT );
    //**********************************************************************************************
@@ -4475,7 +4422,7 @@ class Column<MT,false,true,true,CCAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -4844,6 +4791,7 @@ inline Column<MT,false,true,true,CCAs...>&
    }
 
    decltype(auto) left( derestrict( *this ) );
+
    std::fill( std::copy( list.begin(), list.end(), left.begin() ), left.end(), ElementType() );
 
    BLAZE_INTERNAL_ASSERT( isIntact( matrix_ ), "Invariant violation detected" );
@@ -5212,60 +5160,6 @@ inline Column<MT,false,true,true,CCAs...>&
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a dense column and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the vector.
-//
-// This operator cannot be used for columns on lower or upper unitriangular matrices. The attempt
-// to scale such a row results in a compilation error!
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CCAs >  // Compile time column arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Column<MT,false,true,true,CCAs...> >&
-   Column<MT,false,true,true,CCAs...>::operator*=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   return operator=( (*this) * rhs );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a dense column by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the vector.
-//
-// This operator cannot be used for columns on lower or upper unitriangular matrices. The attempt
-// to scale such a row results in a compilation error!
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CCAs >  // Compile time column arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Column<MT,false,true,true,CCAs...> >&
-   Column<MT,false,true,true,CCAs...>::operator/=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   return operator=( (*this) / rhs );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -5282,8 +5176,23 @@ inline EnableIf_< IsNumeric<Other>, Column<MT,false,true,true,CCAs...> >&
 */
 template< typename MT       // Type of the dense matrix
         , size_t... CCAs >  // Compile time column arguments
-inline typename Column<MT,false,true,true,CCAs...>::Operand
-   Column<MT,false,true,true,CCAs...>::operand() const noexcept
+inline MT& Column<MT,false,true,true,CCAs...>::operand() noexcept
+{
+   return matrix_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the matrix containing the column.
+//
+// \return The matrix containing the column.
+*/
+template< typename MT       // Type of the dense matrix
+        , size_t... CCAs >  // Compile time column arguments
+inline const MT& Column<MT,false,true,true,CCAs...>::operand() const noexcept
 {
    return matrix_;
 }

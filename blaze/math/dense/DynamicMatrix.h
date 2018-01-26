@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/DynamicMatrix.h
 //  \brief Header file for the implementation of a dynamic MxN matrix
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -81,6 +81,7 @@
 #include <blaze/math/typetraits/HasSIMDSub.h>
 #include <blaze/math/typetraits/HighType.h>
 #include <blaze/math/typetraits/IsAligned.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsDiagonal.h>
 #include <blaze/math/typetraits/IsLower.h>
 #include <blaze/math/typetraits/IsPadded.h>
@@ -334,12 +335,6 @@ class DynamicMatrix
    template< typename MT, bool SO2 > inline DynamicMatrix& operator+=( const Matrix<MT,SO2>& rhs );
    template< typename MT, bool SO2 > inline DynamicMatrix& operator-=( const Matrix<MT,SO2>& rhs );
    template< typename MT, bool SO2 > inline DynamicMatrix& operator%=( const Matrix<MT,SO2>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, DynamicMatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, DynamicMatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -607,19 +602,11 @@ inline DynamicMatrix<Type,SO>::DynamicMatrix( size_t m, size_t n )
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline DynamicMatrix<Type,SO>::DynamicMatrix( size_t m, size_t n, const Type& init )
-   : m_       ( m )                            // The current number of rows of the matrix
-   , n_       ( n )                            // The current number of columns of the matrix
-   , nn_      ( addPadding( n ) )              // The alignment adjusted number of columns
-   , capacity_( m_*nn_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( m, n )
 {
    for( size_t i=0UL; i<m; ++i ) {
-      for( size_t j=0UL; j<n_; ++j )
+      for( size_t j=0UL; j<n_; ++j ) {
          v_[i*nn_+j] = init;
-
-      if( IsVectorizable<Type>::value ) {
-         for( size_t j=n_; j<nn_; ++j )
-            v_[i*nn_+j] = Type();
       }
    }
 
@@ -651,16 +638,12 @@ inline DynamicMatrix<Type,SO>::DynamicMatrix( size_t m, size_t n, const Type& in
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline DynamicMatrix<Type,SO>::DynamicMatrix( initializer_list< initializer_list<Type> > list )
-   : m_       ( list.size() )                  // The current number of rows of the matrix
-   , n_       ( determineColumns( list ) )     // The current number of columns of the matrix
-   , nn_      ( addPadding( n_ ) )             // The alignment adjusted number of columns
-   , capacity_( m_*nn_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( list.size(), determineColumns( list ) )
 {
    size_t i( 0UL );
 
    for( const auto& rowList : list ) {
-      std::fill( std::copy( rowList.begin(), rowList.end(), v_+i*nn_ ), v_+(i+1UL)*nn_, Type() );
+      std::fill( std::copy( rowList.begin(), rowList.end(), begin(i) ), end(i), Type() );
       ++i;
    }
 
@@ -696,19 +679,11 @@ template< typename Type     // Data type of the matrix
         , bool SO >         // Storage order
 template< typename Other >  // Data type of the initialization array
 inline DynamicMatrix<Type,SO>::DynamicMatrix( size_t m, size_t n, const Other* array )
-   : m_       ( m )                            // The current number of rows of the matrix
-   , n_       ( n )                            // The current number of columns of the matrix
-   , nn_      ( addPadding( n ) )              // The alignment adjusted number of columns
-   , capacity_( m_*nn_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( m, n )
 {
    for( size_t i=0UL; i<m; ++i ) {
-      for( size_t j=0UL; j<n; ++j )
+      for( size_t j=0UL; j<n; ++j ) {
          v_[i*nn_+j] = array[i*n+j];
-
-      if( IsVectorizable<Type>::value ) {
-         for( size_t j=n; j<nn_; ++j )
-            v_[i*nn_+j] = Type();
       }
    }
 
@@ -744,19 +719,11 @@ template< typename Other  // Data type of the initialization array
         , size_t Rows     // Number of rows of the initialization array
         , size_t Cols >   // Number of columns of the initialization array
 inline DynamicMatrix<Type,SO>::DynamicMatrix( const Other (&array)[Rows][Cols] )
-   : m_       ( Rows )                         // The current number of rows of the matrix
-   , n_       ( Cols )                         // The current number of columns of the matrix
-   , nn_      ( addPadding( Cols ) )           // The alignment adjusted number of columns
-   , capacity_( m_*nn_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( Rows, Cols )
 {
    for( size_t i=0UL; i<Rows; ++i ) {
-      for( size_t j=0UL; j<Cols; ++j )
+      for( size_t j=0UL; j<Cols; ++j ) {
          v_[i*nn_+j] = array[i][j];
-
-      if( IsVectorizable<Type>::value ) {
-         for( size_t j=Cols; j<nn_; ++j )
-            v_[i*nn_+j] = Type();
       }
    }
 
@@ -776,16 +743,11 @@ inline DynamicMatrix<Type,SO>::DynamicMatrix( const Other (&array)[Rows][Cols] )
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline DynamicMatrix<Type,SO>::DynamicMatrix( const DynamicMatrix& m )
-   : m_       ( m.m_  )                        // The current number of rows of the matrix
-   , n_       ( m.n_  )                        // The current number of columns of the matrix
-   , nn_      ( m.nn_ )                        // The alignment adjusted number of columns
-   , capacity_( m_*nn_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( m.m_, m.n_ )
 {
    BLAZE_INTERNAL_ASSERT( capacity_ <= m.capacity_, "Invalid capacity estimation" );
 
-   for( size_t i=0UL; i<capacity_; ++i )
-      v_[i] = m.v_[i];
+   smpAssign( *this, m );
 
    BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
 }
@@ -825,16 +787,13 @@ template< typename Type  // Data type of the matrix
 template< typename MT    // Type of the foreign matrix
         , bool SO2 >     // Storage order of the foreign matrix
 inline DynamicMatrix<Type,SO>::DynamicMatrix( const Matrix<MT,SO2>& m )
-   : m_       ( (~m).rows() )                  // The current number of rows of the matrix
-   , n_       ( (~m).columns() )               // The current number of columns of the matrix
-   , nn_      ( addPadding( n_ ) )             // The alignment adjusted number of columns
-   , capacity_( m_*nn_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( (~m).rows(), (~m).columns() )
 {
-   for( size_t i=0UL; i<m_; ++i ) {
-      for( size_t j=( IsSparseMatrix<MT>::value   ? 0UL : n_ );
-                  j<( IsVectorizable<Type>::value ? nn_ : n_ ); ++j ) {
-         v_[i*nn_+j] = Type();
+   if( IsSparseMatrix<MT>::value ) {
+      for( size_t i=0UL; i<m_; ++i ) {
+         for( size_t j=0UL; j<n_; ++j ) {
+            v_[i*nn_+j] = Type();
+         }
       }
    }
 
@@ -1493,52 +1452,6 @@ inline DynamicMatrix<Type,SO>& DynamicMatrix<Type,SO>::operator%=( const Matrix<
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*!\brief Multiplication assignment operator for the multiplication between a matrix and
-//        a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , bool SO >         // Storage order
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, DynamicMatrix<Type,SO> >&
-   DynamicMatrix<Type,SO>::operator*=( Other rhs )
-{
-   smpAssign( *this, (*this) * rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Division assignment operator for the division of a matrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , bool SO >         // Storage order
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, DynamicMatrix<Type,SO> >&
-   DynamicMatrix<Type,SO>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   smpAssign( *this, (*this) / rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -1776,6 +1689,7 @@ template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 void DynamicMatrix<Type,SO>::resize( size_t m, size_t n, bool preserve )
 {
+   using std::swap;
    using blaze::min;
 
    if( m == m_ && n == n_ ) return;
@@ -1792,13 +1706,13 @@ void DynamicMatrix<Type,SO>::resize( size_t m, size_t n, bool preserve )
          transfer( v_+i*nn_, v_+i*nn_+min_n, v+i*nn );
       }
 
-      std::swap( v_, v );
+      swap( v_, v );
       deallocate( v );
       capacity_ = m*nn;
    }
    else if( m*nn > capacity_ ) {
       Type* BLAZE_RESTRICT v = allocate<Type>( m*nn );
-      std::swap( v_, v );
+      swap( v_, v );
       deallocate( v );
       capacity_ = m*nn;
    }
@@ -1852,6 +1766,8 @@ template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline void DynamicMatrix<Type,SO>::reserve( size_t elements )
 {
+   using std::swap;
+
    if( elements > capacity_ )
    {
       // Allocating a new array
@@ -1866,7 +1782,7 @@ inline void DynamicMatrix<Type,SO>::reserve( size_t elements )
       }
 
       // Replacing the old array
-      std::swap( tmp, v_ );
+      swap( tmp, v_ );
       deallocate( tmp );
       capacity_ = elements;
    }
@@ -1905,11 +1821,13 @@ template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline void DynamicMatrix<Type,SO>::swap( DynamicMatrix& m ) noexcept
 {
-   std::swap( m_ , m.m_  );
-   std::swap( n_ , m.n_  );
-   std::swap( nn_, m.nn_ );
-   std::swap( capacity_, m.capacity_ );
-   std::swap( v_ , m.v_  );
+   using std::swap;
+
+   swap( m_ , m.m_  );
+   swap( n_ , m.n_  );
+   swap( nn_, m.nn_ );
+   swap( capacity_, m.capacity_ );
+   swap( v_ , m.v_  );
 }
 //*************************************************************************************************
 
@@ -3381,12 +3299,6 @@ class DynamicMatrix<Type,true>
    template< typename MT, bool SO > inline DynamicMatrix& operator+=( const Matrix<MT,SO>& rhs );
    template< typename MT, bool SO > inline DynamicMatrix& operator-=( const Matrix<MT,SO>& rhs );
    template< typename MT, bool SO > inline DynamicMatrix& operator%=( const Matrix<MT,SO>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, DynamicMatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, DynamicMatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -3640,19 +3552,11 @@ inline DynamicMatrix<Type,true>::DynamicMatrix( size_t m, size_t n )
 */
 template< typename Type >  // Data type of the matrix
 inline DynamicMatrix<Type,true>::DynamicMatrix( size_t m, size_t n, const Type& init )
-   : m_       ( m )                            // The current number of rows of the matrix
-   , mm_      ( addPadding( m ) )              // The alignment adjusted number of rows
-   , n_       ( n )                            // The current number of columns of the matrix
-   , capacity_( mm_*n_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( m, n )
 {
    for( size_t j=0UL; j<n_; ++j ) {
-      for( size_t i=0UL; i<m_; ++i )
+      for( size_t i=0UL; i<m_; ++i ) {
          v_[i+j*mm_] = init;
-
-      if( IsVectorizable<Type>::value ) {
-         for( size_t i=m_; i<mm_; ++i )
-            v_[i+j*mm_] = Type();
       }
    }
 
@@ -3685,11 +3589,7 @@ inline DynamicMatrix<Type,true>::DynamicMatrix( size_t m, size_t n, const Type& 
 */
 template< typename Type >  // Data type of the matrix
 inline DynamicMatrix<Type,true>::DynamicMatrix( initializer_list< initializer_list<Type> > list )
-   : m_       ( list.size() )                  // The current number of rows of the matrix
-   , mm_      ( addPadding( m_ ) )             // The alignment adjusted number of rows
-   , n_       ( determineColumns( list ) )     // The current number of columns of the matrix
-   , capacity_( mm_*n_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( list.size(), determineColumns( list ) )
 {
    size_t i( 0UL );
 
@@ -3706,15 +3606,6 @@ inline DynamicMatrix<Type,true>::DynamicMatrix( initializer_list< initializer_li
    }
 
    BLAZE_INTERNAL_ASSERT( i == m_, "Invalid number of elements detected" );
-
-   if( IsVectorizable<Type>::value ) {
-      for( ; i<mm_; ++i ) {
-         for( size_t j=0UL; j<n_; ++j ) {
-            v_[i+j*mm_] = Type();
-         }
-      }
-   }
-
    BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
 }
 /*! \endcond */
@@ -3748,19 +3639,11 @@ inline DynamicMatrix<Type,true>::DynamicMatrix( initializer_list< initializer_li
 template< typename Type >   // Data type of the matrix
 template< typename Other >  // Data type of the initialization array
 inline DynamicMatrix<Type,true>::DynamicMatrix( size_t m, size_t n, const Other* array )
-   : m_       ( m )                            // The current number of rows of the matrix
-   , mm_      ( addPadding( m ) )              // The alignment adjusted number of rows
-   , n_       ( n )                            // The current number of columns of the matrix
-   , capacity_( mm_*n_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( m, n )
 {
    for( size_t j=0UL; j<n; ++j ) {
-      for( size_t i=0UL; i<m; ++i )
+      for( size_t i=0UL; i<m; ++i ) {
          v_[i+j*mm_] = array[i+j*m];
-
-      if( IsVectorizable<Type>::value ) {
-         for( size_t i=m; i<mm_; ++i )
-            v_[i+j*mm_] = Type();
       }
    }
 
@@ -3797,19 +3680,11 @@ template< typename Other   // Data type of the initialization array
         , size_t Rows      // Number of rows of the initialization array
         , size_t Cols >    // Number of columns of the initialization array
 inline DynamicMatrix<Type,true>::DynamicMatrix( const Other (&array)[Rows][Cols] )
-   : m_       ( Rows )                         // The current number of rows of the matrix
-   , mm_      ( addPadding( Rows ) )           // The alignment adjusted number of rows
-   , n_       ( Cols )                         // The current number of columns of the matrix
-   , capacity_( mm_*n_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( Rows, Cols )
 {
    for( size_t j=0UL; j<Cols; ++j ) {
-      for( size_t i=0UL; i<Rows; ++i )
+      for( size_t i=0UL; i<Rows; ++i ) {
          v_[i+j*mm_] = array[i][j];
-
-      if( IsVectorizable<Type>::value ) {
-         for( size_t i=Rows; i<mm_; ++i )
-            v_[i+j*mm_] = Type();
       }
    }
 
@@ -3830,16 +3705,11 @@ inline DynamicMatrix<Type,true>::DynamicMatrix( const Other (&array)[Rows][Cols]
 */
 template< typename Type >  // Data type of the matrix
 inline DynamicMatrix<Type,true>::DynamicMatrix( const DynamicMatrix& m )
-   : m_       ( m.m_  )                        // The current number of rows of the matrix
-   , mm_      ( m.mm_ )                        // The alignment adjusted number of rows
-   , n_       ( m.n_  )                        // The current number of columns of the matrix
-   , capacity_( mm_*n_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( m.m_, m.n_ )
 {
    BLAZE_INTERNAL_ASSERT( capacity_ <= m.capacity_, "Invalid capacity estimation" );
 
-   for( size_t i=0UL; i<capacity_; ++i )
-      v_[i] = m.v_[i];
+   smpAssign( *this, m );
 
    BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
 }
@@ -3881,16 +3751,13 @@ template< typename Type >  // Data type of the matrix
 template< typename MT      // Type of the foreign matrix
         , bool SO >        // Storage order of the foreign matrix
 inline DynamicMatrix<Type,true>::DynamicMatrix( const Matrix<MT,SO>& m )
-   : m_       ( (~m).rows() )                  // The current number of rows of the matrix
-   , mm_      ( addPadding( m_ ) )             // The alignment adjusted number of rows
-   , n_       ( (~m).columns() )               // The current number of columns of the matrix
-   , capacity_( mm_*n_ )                       // The maximum capacity of the matrix
-   , v_       ( allocate<Type>( capacity_ ) )  // The matrix elements
+   : DynamicMatrix( (~m).rows(), (~m).columns() )
 {
-   for( size_t j=0UL; j<n_; ++j ) {
-      for( size_t i=( IsSparseMatrix<MT>::value   ? 0UL : m_ );
-                  i<( IsVectorizable<Type>::value ? mm_ : m_ ); ++i ) {
-         v_[i+j*mm_] = Type();
+   if( IsSparseMatrix<MT>::value ) {
+      for( size_t j=0UL; j<n_; ++j ) {
+         for( size_t i=0UL; i<m_; ++i ) {
+            v_[i+j*mm_] = Type();
+         }
       }
    }
 
@@ -4549,54 +4416,6 @@ inline DynamicMatrix<Type,true>& DynamicMatrix<Type,true>::operator%=( const Mat
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a matrix and
-//        a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the matrix.
-*/
-template< typename Type >   // Data type of the matrix
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, DynamicMatrix<Type,true> >&
-   DynamicMatrix<Type,true>::operator*=( Other rhs )
-{
-   smpAssign( *this, (*this) * rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a matrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the matrix.
-*/
-template< typename Type >   // Data type of the matrix
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, DynamicMatrix<Type,true> >&
-   DynamicMatrix<Type,true>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   smpAssign( *this, (*this) / rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -4830,6 +4649,7 @@ inline void DynamicMatrix<Type,true>::clear()
 template< typename Type >  // Data type of the matrix
 void DynamicMatrix<Type,true>::resize( size_t m, size_t n, bool preserve )
 {
+   using std::swap;
    using blaze::min;
 
    if( m == m_ && n == n_ ) return;
@@ -4846,13 +4666,13 @@ void DynamicMatrix<Type,true>::resize( size_t m, size_t n, bool preserve )
          transfer( v_+j*mm_, v_+min_m+j*mm_, v+j*mm );
       }
 
-      std::swap( v_, v );
+      swap( v_, v );
       deallocate( v );
       capacity_ = mm*n;
    }
    else if( mm*n > capacity_ ) {
       Type* BLAZE_RESTRICT v = allocate<Type>( mm*n );
-      std::swap( v_, v );
+      swap( v_, v );
       deallocate( v );
       capacity_ = mm*n;
    }
@@ -4908,6 +4728,8 @@ inline void DynamicMatrix<Type,true>::extend( size_t m, size_t n, bool preserve 
 template< typename Type >  // Data type of the matrix
 inline void DynamicMatrix<Type,true>::reserve( size_t elements )
 {
+   using std::swap;
+
    if( elements > capacity_ )
    {
       // Allocating a new array
@@ -4922,7 +4744,7 @@ inline void DynamicMatrix<Type,true>::reserve( size_t elements )
       }
 
       // Replacing the old array
-      std::swap( tmp, v_ );
+      swap( tmp, v_ );
       deallocate( tmp );
       capacity_ = elements;
    }
@@ -4963,11 +4785,13 @@ inline void DynamicMatrix<Type,true>::shrinkToFit()
 template< typename Type >  // Data type of the matrix
 inline void DynamicMatrix<Type,true>::swap( DynamicMatrix& m ) noexcept
 {
-   std::swap( m_ , m.m_  );
-   std::swap( mm_, m.mm_ );
-   std::swap( n_ , m.n_  );
-   std::swap( capacity_, m.capacity_ );
-   std::swap( v_ , m.v_  );
+   using std::swap;
+
+   swap( m_ , m.m_  );
+   swap( mm_, m.mm_ );
+   swap( n_ , m.n_  );
+   swap( capacity_, m.capacity_ );
+   swap( v_ , m.v_  );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -6546,6 +6370,24 @@ struct HasMutableDataAccess< DynamicMatrix<T,SO> >
 template< typename T, bool SO >
 struct IsAligned< DynamicMatrix<T,SO> >
    : public BoolConstant<usePadding>
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ISCONTIGUOUS SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename T, bool SO >
+struct IsContiguous< DynamicMatrix<T,SO> >
+   : public TrueType
 {};
 /*! \endcond */
 //*************************************************************************************************

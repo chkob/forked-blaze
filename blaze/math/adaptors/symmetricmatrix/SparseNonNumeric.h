@@ -3,7 +3,7 @@
 //  \file blaze/math/adaptors/symmetricmatrix/SparseNonNumeric.h
 //  \brief SymmetricMatrix specialization for sparse matrices with non-numeric element type
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -61,6 +61,7 @@
 #include <blaze/math/shims/Clear.h>
 #include <blaze/math/shims/Conjugate.h>
 #include <blaze/math/shims/IsDefault.h>
+#include <blaze/math/shims/IsZero.h>
 #include <blaze/math/sparse/SparseElement.h>
 #include <blaze/math/sparse/SparseMatrix.h>
 #include <blaze/math/traits/AddTrait.h>
@@ -530,11 +531,11 @@ class SymmetricMatrix<MT,SO,false,false>
    template< typename MT2 >
    inline SymmetricMatrix& operator%=( const Matrix<MT2,!SO>& rhs );
 
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, SymmetricMatrix >& operator*=( Other rhs );
+   template< typename ST >
+   inline EnableIf_< IsNumeric<ST>, SymmetricMatrix >& operator*=( ST rhs );
 
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, SymmetricMatrix >& operator/=( Other rhs );
+   template< typename ST >
+   inline EnableIf_< IsNumeric<ST>, SymmetricMatrix >& operator/=( ST rhs );
    //@}
    //**********************************************************************************************
 
@@ -1546,11 +1547,11 @@ inline SymmetricMatrix<MT,SO,false,false>&
 // \param rhs The right-hand side scalar value for the multiplication.
 // \return Reference to the matrix.
 */
-template< typename MT       // Type of the adapted sparse matrix
-        , bool SO >         // Storage order of the adapted sparse matrix
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, SymmetricMatrix<MT,SO,false,false> >&
-   SymmetricMatrix<MT,SO,false,false>::operator*=( Other rhs )
+template< typename MT    // Type of the adapted sparse matrix
+        , bool SO >      // Storage order of the adapted sparse matrix
+template< typename ST >  // Data type of the right-hand side scalar
+inline EnableIf_< IsNumeric<ST>, SymmetricMatrix<MT,SO,false,false> >&
+   SymmetricMatrix<MT,SO,false,false>::operator*=( ST rhs )
 {
    for( size_t i=0UL; i<rows(); ++i ) {
       const Iterator_<MatrixType> last( matrix_.upperBound(i,i) );
@@ -1572,13 +1573,13 @@ inline EnableIf_< IsNumeric<Other>, SymmetricMatrix<MT,SO,false,false> >&
 // \param rhs The right-hand side scalar value for the division.
 // \return Reference to the matrix.
 */
-template< typename MT       // Type of the adapted sparse matrix
-        , bool SO >         // Storage order of the adapted sparse matrix
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, SymmetricMatrix<MT,SO,false,false> >&
-   SymmetricMatrix<MT,SO,false,false>::operator/=( Other rhs )
+template< typename MT    // Type of the adapted sparse matrix
+        , bool SO >      // Storage order of the adapted sparse matrix
+template< typename ST >  // Data type of the right-hand side scalar
+inline EnableIf_< IsNumeric<ST>, SymmetricMatrix<MT,SO,false,false> >&
+   SymmetricMatrix<MT,SO,false,false>::operator/=( ST rhs )
 {
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
+   BLAZE_USER_ASSERT( !isZero( rhs ), "Division by zero detected" );
 
    for( size_t i=0UL; i<rows(); ++i ) {
       const Iterator_<MatrixType> last( matrix_.upperBound(i,i) );
@@ -2340,8 +2341,8 @@ inline void
 // In case the element is found, the function returns an row/column iterator to the element.
 // Otherwise an iterator just past the last non-zero element of row \a i or column \a j (the
 // end() iterator) is returned. Note that the returned symmetric matrix iterator is subject
-// to invalidation due to inserting operations via the function call operator or the insert()
-// function!
+// to invalidation due to inserting operations via the function call operator, the set()
+// function or the insert() function!
 */
 template< typename MT  // Type of the adapted sparse matrix
         , bool SO >    // Storage order of the adapted sparse matrix
@@ -2367,8 +2368,8 @@ inline typename SymmetricMatrix<MT,SO,false,false>::Iterator
 // In case the element is found, the function returns an row/column iterator to the element.
 // Otherwise an iterator just past the last non-zero element of row \a i or column \a j (the
 // end() iterator) is returned. Note that the returned symmetric matrix iterator is subject
-// to invalidation due to inserting operations via the function call operator or the insert()
-// function!
+// to invalidation due to inserting operations via the function call operator, the set()
+// function or the insert() function!
 */
 template< typename MT  // Type of the adapted sparse matrix
         , bool SO >    // Storage order of the adapted sparse matrix
@@ -2394,8 +2395,8 @@ inline typename SymmetricMatrix<MT,SO,false,false>::ConstIterator
 // returns a column iterator to the first element with an index not less then the given row
 // index. In combination with the upperBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned symmetric matrix
-// iterator is subject to invalidation due to inserting operations via the function call operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the function call operator,
+// the set() function or the insert() function!
 */
 template< typename MT  // Type of the adapted sparse matrix
         , bool SO >    // Storage order of the adapted sparse matrix
@@ -2421,8 +2422,8 @@ inline typename SymmetricMatrix<MT,SO,false,false>::Iterator
 // returns a column iterator to the first element with an index not less then the given row
 // index. In combination with the upperBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned symmetric matrix
-// iterator is subject to invalidation due to inserting operations via the function call operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the function call operator,
+// the set() function or the insert() function!
 */
 template< typename MT  // Type of the adapted sparse matrix
         , bool SO >    // Storage order of the adapted sparse matrix
@@ -2446,10 +2447,10 @@ inline typename SymmetricMatrix<MT,SO,false,false>::ConstIterator
 // In case of a row-major matrix, this function returns a row iterator to the first element with
 // an index greater then the given column index. In case of a column-major matrix, the function
 // returns a column iterator to the first element with an index greater then the given row
-// index. In combination with the upperBound() function this function can be used to create a
+// index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned symmetric matrix
-// iterator is subject to invalidation due to inserting operations via the function call operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the function call operator,
+// the set() function or the insert() function!
 */
 template< typename MT  // Type of the adapted sparse matrix
         , bool SO >    // Storage order of the adapted sparse matrix
@@ -2473,10 +2474,10 @@ inline typename SymmetricMatrix<MT,SO,false,false>::Iterator
 // In case of a row-major matrix, this function returns a row iterator to the first element with
 // an index greater then the given column index. In case of a column-major matrix, the function
 // returns a column iterator to the first element with an index greater then the given row
-// index. In combination with the upperBound() function this function can be used to create a
+// index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned symmetric matrix
-// iterator is subject to invalidation due to inserting operations via the function call operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the function call operator,
+// the set() function or the insert() function!
 */
 template< typename MT  // Type of the adapted sparse matrix
         , bool SO >    // Storage order of the adapted sparse matrix

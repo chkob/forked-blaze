@@ -3,7 +3,7 @@
 //  \file blaze/math/Constraints.h
 //  \brief Header file for all mathematical constraints
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -48,9 +48,11 @@
 #include <blaze/math/constraints/BLASCompatible.h>
 #include <blaze/math/constraints/Column.h>
 #include <blaze/math/constraints/ColumnMajorMatrix.h>
+#include <blaze/math/constraints/Columns.h>
 #include <blaze/math/constraints/ColumnVector.h>
 #include <blaze/math/constraints/Computation.h>
 #include <blaze/math/constraints/ConstDataAccess.h>
+#include <blaze/math/constraints/Contiguous.h>
 #include <blaze/math/constraints/CrossExpr.h>
 #include <blaze/math/constraints/Custom.h>
 #include <blaze/math/constraints/Declaration.h>
@@ -64,6 +66,7 @@
 #include <blaze/math/constraints/DenseVector.h>
 #include <blaze/math/constraints/Diagonal.h>
 #include <blaze/math/constraints/DivExpr.h>
+#include <blaze/math/constraints/Elements.h>
 #include <blaze/math/constraints/EvalExpr.h>
 #include <blaze/math/constraints/Expression.h>
 #include <blaze/math/constraints/General.h>
@@ -98,6 +101,7 @@
 #include <blaze/math/constraints/Restricted.h>
 #include <blaze/math/constraints/Row.h>
 #include <blaze/math/constraints/RowMajorMatrix.h>
+#include <blaze/math/constraints/Rows.h>
 #include <blaze/math/constraints/RowVector.h>
 #include <blaze/math/constraints/SchurExpr.h>
 #include <blaze/math/constraints/SerialExpr.h>

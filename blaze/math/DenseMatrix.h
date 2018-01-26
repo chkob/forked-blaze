@@ -3,7 +3,7 @@
 //  \file blaze/math/DenseMatrix.h
 //  \brief Header file for all basic DenseMatrix functionality
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -71,6 +71,7 @@
 #include <blaze/math/expressions/DMatEvalExpr.h>
 #include <blaze/math/expressions/DMatInvExpr.h>
 #include <blaze/math/expressions/DMatMapExpr.h>
+#include <blaze/math/expressions/DMatNormExpr.h>
 #include <blaze/math/expressions/DMatScalarDivExpr.h>
 #include <blaze/math/expressions/DMatScalarMultExpr.h>
 #include <blaze/math/expressions/DMatSerialExpr.h>

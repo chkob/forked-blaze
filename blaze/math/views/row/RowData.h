@@ -3,7 +3,7 @@
 //  \file blaze/math/views/row/RowData.h
 //  \brief Header file for the implementation of the RowData class template
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -193,7 +193,7 @@ struct RowData<Index>
    //**Utility functions***************************************************************************
    /*!\name Utility functions */
    //@{
-   inline size_t row() const noexcept;
+   static inline constexpr size_t row() noexcept;
    //@}
    //**********************************************************************************************
 };
@@ -224,7 +224,7 @@ inline RowData<Index>::RowData( RRAs... args )
 // \return The index of the row.
 */
 template< size_t Index >  // Compile time row index
-inline size_t RowData<Index>::row() const noexcept
+inline constexpr size_t RowData<Index>::row() noexcept
 {
    return Index;
 }

@@ -3,7 +3,7 @@
 //  \file src/mathtest/symmetricmatrix/SparseNumericTest2.cpp
 //  \brief Source file for the SymmetricMatrix sparse numeric test (part 2)
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -1506,13 +1506,13 @@ void SparseNumericTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 0th row via Iterator
+      // Counting the number of elements in 0th row via Iterator (end-begin)
       {
-         test_ = "Row-major Iterator subtraction";
+         test_ = "Row-major Iterator subtraction (end-begin)";
 
-         const size_t number( end( sym, 0UL ) - begin( sym, 0UL ) );
+         const ptrdiff_t number( end( sym, 0UL ) - begin( sym, 0UL ) );
 
-         if( number != 1UL ) {
+         if( number != 1L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1523,13 +1523,13 @@ void SparseNumericTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st row via ConstIterator
+      // Counting the number of elements in 1st row via ConstIterator (end-begin)
       {
-         test_ = "Row-major ConstIterator subtraction";
+         test_ = "Row-major ConstIterator subtraction (end-begin)";
 
-         const size_t number( cend( sym, 1UL ) - cbegin( sym, 1UL ) );
+         const ptrdiff_t number( cend( sym, 1UL ) - cbegin( sym, 1UL ) );
 
-         if( number != 2UL ) {
+         if( number != 2L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1945,13 +1945,13 @@ void SparseNumericTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 0th row via Iterator
+      // Counting the number of elements in 0th row via Iterator (end-begin)
       {
-         test_ = "Row-major Iterator subtraction";
+         test_ = "Row-major Iterator subtraction (end-begin)";
 
-         const size_t number( end( sym, 0UL ) - begin( sym, 0UL ) );
+         const ptrdiff_t number( end( sym, 0UL ) - begin( sym, 0UL ) );
 
-         if( number != 1UL ) {
+         if( number != 1L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1962,13 +1962,13 @@ void SparseNumericTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st row via ConstIterator
+      // Counting the number of elements in 1st row via ConstIterator (end-begin)
       {
-         test_ = "Row-major ConstIterator subtraction";
+         test_ = "Row-major ConstIterator subtraction (end-begin)";
 
-         const size_t number( cend( sym, 1UL ) - cbegin( sym, 1UL ) );
+         const ptrdiff_t number( cend( sym, 1UL ) - cbegin( sym, 1UL ) );
 
-         if( number != 2UL ) {
+         if( number != 2L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"

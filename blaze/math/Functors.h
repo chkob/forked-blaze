@@ -3,7 +3,7 @@
 //  \file blaze/math/Functors.h
 //  \brief Header file for all functors
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -71,6 +71,7 @@
 #include <blaze/math/functors/Exp2.h>
 #include <blaze/math/functors/Exp10.h>
 #include <blaze/math/functors/Floor.h>
+#include <blaze/math/functors/Hypot.h>
 #include <blaze/math/functors/Imag.h>
 #include <blaze/math/functors/Inv.h>
 #include <blaze/math/functors/InvCbrt.h>
@@ -83,6 +84,8 @@
 #include <blaze/math/functors/MultAssign.h>
 #include <blaze/math/functors/Noop.h>
 #include <blaze/math/functors/Pow.h>
+#include <blaze/math/functors/Pow2.h>
+#include <blaze/math/functors/Pow3.h>
 #include <blaze/math/functors/Real.h>
 #include <blaze/math/functors/Round.h>
 #include <blaze/math/functors/SchurAssign.h>

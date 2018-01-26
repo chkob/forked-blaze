@@ -3,7 +3,7 @@
 //  \file blaze/math/functors/Noop.h
 //  \brief Header file for the Noop functor
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -40,6 +40,7 @@
 // Includes
 //*************************************************************************************************
 
+#include <blaze/math/constraints/SIMDPack.h>
 #include <blaze/system/Inline.h>
 
 
@@ -73,6 +74,29 @@ struct Noop
    template< typename T >
    BLAZE_ALWAYS_INLINE decltype(auto) operator()( const T& a ) const
    {
+      return a;
+   }
+   //**********************************************************************************************
+
+   //**********************************************************************************************
+   /*!\brief Returns whether SIMD is enabled for the specified data type \a T.
+   //
+   // \return \a true in case SIMD is enabled for the data type \a T, \a false if not.
+   */
+   template< typename T >
+   static constexpr bool simdEnabled() { return true; }
+   //**********************************************************************************************
+
+   //**********************************************************************************************
+   /*!\brief Returns the given SIMD vector without modifications.
+   //
+   // \param a The given SIMD vector.
+   // \return The given SIMD vector without modifications.
+   */
+   template< typename T >
+   BLAZE_ALWAYS_INLINE decltype(auto) load( const T& a ) const
+   {
+      BLAZE_CONSTRAINT_MUST_BE_SIMD_PACK( T );
       return a;
    }
    //**********************************************************************************************

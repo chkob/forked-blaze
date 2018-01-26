@@ -3,7 +3,7 @@
 //  \file src/mathtest/lowermatrix/SparseTest2.cpp
 //  \brief Source file for the LowerMatrix sparse test (part 2)
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -1306,13 +1306,13 @@ void SparseTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 0th row via Iterator
+      // Counting the number of elements in 0th row via Iterator (end-begin)
       {
-         test_ = "Row-major Iterator subtraction";
+         test_ = "Row-major Iterator subtraction (end-begin)";
 
-         const size_t number( end( lower, 0UL ) - begin( lower, 0UL ) );
+         const ptrdiff_t number( end( lower, 0UL ) - begin( lower, 0UL ) );
 
-         if( number != 1UL ) {
+         if( number != 1L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1323,13 +1323,13 @@ void SparseTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st row via ConstIterator
+      // Counting the number of elements in 1st row via ConstIterator (end-begin)
       {
-         test_ = "Row-major ConstIterator subtraction";
+         test_ = "Row-major ConstIterator subtraction (end-begin)";
 
-         const size_t number( cend( lower, 1UL ) - cbegin( lower, 1UL ) );
+         const ptrdiff_t number( cend( lower, 1UL ) - cbegin( lower, 1UL ) );
 
-         if( number != 1UL ) {
+         if( number != 1L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1542,13 +1542,13 @@ void SparseTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 0th column via Iterator
+      // Counting the number of elements in 0th column via Iterator (end-begin)
       {
-         test_ = "Column-major Iterator subtraction";
+         test_ = "Column-major Iterator subtraction (end-begin)";
 
-         const size_t number( end( lower, 0UL ) - begin( lower, 0UL ) );
+         const ptrdiff_t number( end( lower, 0UL ) - begin( lower, 0UL ) );
 
-         if( number != 2UL ) {
+         if( number != 2L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1559,13 +1559,13 @@ void SparseTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st column via ConstIterator
+      // Counting the number of elements in 1st column via ConstIterator (end-begin)
       {
-         test_ = "Column-major ConstIterator subtraction";
+         test_ = "Column-major ConstIterator subtraction (end-begin)";
 
-         const size_t number( cend( lower, 1UL ) - cbegin( lower, 1UL ) );
+         const ptrdiff_t number( cend( lower, 1UL ) - cbegin( lower, 1UL ) );
 
-         if( number != 1UL ) {
+         if( number != 1L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"

@@ -3,7 +3,7 @@
 //  \file blaze/math/views/subvector/Sparse.h
 //  \brief Subvector specialization for sparse vectors
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -55,6 +55,7 @@
 #include <blaze/math/expressions/SparseVector.h>
 #include <blaze/math/expressions/View.h>
 #include <blaze/math/InitializerList.h>
+#include <blaze/math/RelaxationFlag.h>
 #include <blaze/math/shims/IsDefault.h>
 #include <blaze/math/shims/Serial.h>
 #include <blaze/math/sparse/SparseElement.h>
@@ -71,14 +72,11 @@
 #include <blaze/math/views/subvector/SubvectorData.h>
 #include <blaze/util/Assert.h>
 #include <blaze/util/DisableIf.h>
-#include <blaze/util/EnableIf.h>
 #include <blaze/util/mpl/If.h>
 #include <blaze/util/TypeList.h>
 #include <blaze/util/Types.h>
 #include <blaze/util/typetraits/IsConst.h>
-#include <blaze/util/typetraits/IsFloatingPoint.h>
 #include <blaze/util/typetraits/IsIntegral.h>
-#include <blaze/util/typetraits/IsNumeric.h>
 #include <blaze/util/typetraits/IsReference.h>
 #include <blaze/util/typetraits/RemoveReference.h>
 
@@ -467,12 +465,6 @@ class Subvector<VT,AF,TF,false,CSAs...>
    template< typename VT2 > inline Subvector& operator*=( const Vector<VT2,TF>& rhs );
    template< typename VT2 > inline Subvector& operator/=( const DenseVector<VT2,TF>& rhs );
    template< typename VT2 > inline Subvector& operator%=( const Vector<VT2,TF>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, Subvector >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, Subvector >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -482,11 +474,13 @@ class Subvector<VT,AF,TF,false,CSAs...>
    using DataType::offset;
    using DataType::size;
 
-   inline Operand operand() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  nonZeros() const;
-   inline void    reset();
-   inline void    reserve( size_t n );
+   inline VT&       operand() noexcept;
+   inline const VT& operand() const noexcept;
+
+   inline size_t capacity() const noexcept;
+   inline size_t nonZeros() const;
+   inline void   reset();
+   inline void   reserve( size_t n );
    //@}
    //**********************************************************************************************
 
@@ -574,7 +568,7 @@ class Subvector<VT,AF,TF,false,CSAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -911,6 +905,7 @@ inline Subvector<VT,AF,TF,false,CSAs...>&
    }
 
    decltype(auto) left( derestrict( *this ) );
+
    reset();
    assign( left, tmp );
 
@@ -1307,81 +1302,6 @@ inline Subvector<VT,AF,TF,false,CSAs...>&
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a sparse subvector
-//        and a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the assigned subvector.
-//
-// This operator can only be used for built-in data types. Additionally, the elements of
-// the sparse subvector must support the multiplication assignment operator for the given
-// scalar built-in data type.
-*/
-template< typename VT       // Type of the sparse vector
-        , AlignmentFlag AF  // Alignment flag
-        , bool TF           // Transpose flag
-        , size_t... CSAs >  // Compile time subvector arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, Subvector<VT,AF,TF,false,CSAs...> >&
-   Subvector<VT,AF,TF,false,CSAs...>::operator*=( Other rhs )
-{
-   const Iterator last( end() );
-   for( Iterator element=begin(); element!=last; ++element )
-      element->value() *= rhs;
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a sparse subvector by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the assigned subvector.
-//
-// This operator can only be used for built-in data types. Additionally, the elements of the
-// sparse subvector must either support the multiplication assignment operator for the given
-// floating point data type or the division assignment operator for the given integral data
-// type.
-*/
-template< typename VT       // Type of the sparse vector
-        , AlignmentFlag AF  // Alignment flag
-        , bool TF           // Transpose flag
-        , size_t... CSAs >  // Compile time subvector arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, Subvector<VT,AF,TF,false,CSAs...> >&
-   Subvector<VT,AF,TF,false,CSAs...>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   using DT  = DivTrait_<ElementType,Other>;
-   using Tmp = If_< IsNumeric<DT>, DT, Other >;
-
-   const Iterator last( end() );
-
-   // Depending on the two involved data types, an integer division is applied or a
-   // floating point division is selected.
-   if( IsNumeric<DT>::value && IsFloatingPoint<DT>::value ) {
-      const Tmp tmp( Tmp(1)/static_cast<Tmp>( rhs ) );
-      for( Iterator element=begin(); element!=last; ++element )
-         element->value() *= tmp;
-   }
-   else {
-      for( Iterator element=begin(); element!=last; ++element )
-         element->value() /= rhs;
-   }
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -1400,8 +1320,25 @@ template< typename VT       // Type of the sparse vector
         , AlignmentFlag AF  // Alignment flag
         , bool TF           // Transpose flag
         , size_t... CSAs >  // Compile time subvector arguments
-inline typename Subvector<VT,AF,TF,false,CSAs...>::Operand
-   Subvector<VT,AF,TF,false,CSAs...>::operand() const noexcept
+inline VT& Subvector<VT,AF,TF,false,CSAs...>::operand() noexcept
+{
+   return vector_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the vector containing the subvector.
+//
+// \return The vector containing the subvector.
+*/
+template< typename VT       // Type of the sparse vector
+        , AlignmentFlag AF  // Alignment flag
+        , bool TF           // Transpose flag
+        , size_t... CSAs >  // Compile time subvector arguments
+inline const VT& Subvector<VT,AF,TF,false,CSAs...>::operand() const noexcept
 {
    return vector_;
 }
@@ -1583,7 +1520,7 @@ inline void Subvector<VT,AF,TF,false,CSAs...>::append( size_t index, const Eleme
 {
    if( offset() + size() == vector_.size() )
       vector_.append( offset() + index, value, check );
-   else if( !check || !isDefault( value ) )
+   else if( !check || !isDefault<strict>( value ) )
       vector_.insert( offset() + index, value );
 }
 /*! \endcond */
@@ -1760,7 +1697,7 @@ inline void Subvector<VT,AF,TF,false,CSAs...>::erase( Iterator first, Iterator l
 // is found, the function returns an iterator to the element. Otherwise an iterator just past
 // the last non-zero element of the sparse subvector (the end() iterator) is returned. Note that
 // the returned sparse subvector iterator is subject to invalidation due to inserting operations
-// via the subscript operator or the insert() function!
+// via the subscript operator, the set() function or the insert() function!
 */
 template< typename VT       // Type of the sparse vector
         , AlignmentFlag AF  // Alignment flag
@@ -1792,7 +1729,7 @@ inline typename Subvector<VT,AF,TF,false,CSAs...>::Iterator
 // is found, the function returns an iterator to the element. Otherwise an iterator just past
 // the last non-zero element of the sparse subvector (the end() iterator) is returned. Note that
 // the returned sparse subvector iterator is subject to invalidation due to inserting operations
-// via the subscript operator or the insert() function!
+// via the subscript operator, the set() function or the insert() function!
 */
 template< typename VT       // Type of the sparse vector
         , AlignmentFlag AF  // Alignment flag
@@ -1822,8 +1759,8 @@ inline typename Subvector<VT,AF,TF,false,CSAs...>::ConstIterator
 // This function returns an iterator to the first element with an index not less then the given
 // index. In combination with the upperBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse subvector
-// iterator is subject to invalidation due to inserting operations via the subscript operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the subscript operator,
+// the set() function or the insert() function!
 */
 template< typename VT       // Type of the sparse vector
         , AlignmentFlag AF  // Alignment flag
@@ -1848,8 +1785,8 @@ inline typename Subvector<VT,AF,TF,false,CSAs...>::Iterator
 // This function returns an iterator to the first element with an index not less then the given
 // index. In combination with the upperBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse subvector
-// iterator is subject to invalidation due to inserting operations via the subscript operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the subscript operator,
+// the set() function or the insert() function!
 */
 template< typename VT       // Type of the sparse vector
         , AlignmentFlag AF  // Alignment flag
@@ -1872,10 +1809,10 @@ inline typename Subvector<VT,AF,TF,false,CSAs...>::ConstIterator
 // \return Iterator to the first index greater then the given index, end() iterator otherwise.
 //
 // This function returns an iterator to the first element with an index greater then the given
-// index. In combination with the upperBound() function this function can be used to create a
+// index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse subvector
-// iterator is subject to invalidation due to inserting operations via the subscript operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the subscript operator,
+// the set() function or the insert() function!
 */
 template< typename VT       // Type of the sparse vector
         , AlignmentFlag AF  // Alignment flag
@@ -1898,10 +1835,10 @@ inline typename Subvector<VT,AF,TF,false,CSAs...>::Iterator
 // \return Iterator to the first index greater then the given index, end() iterator otherwise.
 //
 // This function returns an iterator to the first element with an index greater then the given
-// index. In combination with the upperBound() function this function can be used to create a
+// index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse subvector
-// iterator is subject to invalidation due to inserting operations via the subscript operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the subscript operator,
+// the set() function or the insert() function!
 */
 template< typename VT       // Type of the sparse vector
         , AlignmentFlag AF  // Alignment flag

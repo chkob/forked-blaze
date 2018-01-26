@@ -3,7 +3,7 @@
 //  \file blaze/util/AsConst.h
 //  \brief Header file for the as_const function template
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -73,7 +73,7 @@ inline constexpr AddConst_<T>& as_const( T& v ) noexcept
 // \ingroup util
 //
 // This overload of the as_const() function disables its use on rvalues. This prevents potential
-// misuse in as for instance in the following example:
+// misuse as in for instance the following example:
 
    \code
    for( const auto&& value : as_const( getTemporary() ) )

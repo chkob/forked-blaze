@@ -3,7 +3,7 @@
 //  \file blaze/math/views/Column.h
 //  \brief Header file for the implementation of the Column view
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -63,19 +63,17 @@
 #include <blaze/math/typetraits/HasMutableDataAccess.h>
 #include <blaze/math/typetraits/IsAligned.h>
 #include <blaze/math/typetraits/IsColumnMajorMatrix.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsOpposedView.h>
-#include <blaze/math/typetraits/IsSubmatrix.h>
 #include <blaze/math/typetraits/IsSymmetric.h>
 #include <blaze/math/typetraits/Size.h>
 #include <blaze/math/views/Check.h>
 #include <blaze/math/views/column/BaseTemplate.h>
 #include <blaze/math/views/column/Dense.h>
 #include <blaze/math/views/column/Sparse.h>
-#include <blaze/util/DisableIf.h>
-#include <blaze/util/EnableIf.h>
+#include <blaze/util/Assert.h>
 #include <blaze/util/FunctionTrace.h>
 #include <blaze/util/mpl/And.h>
-#include <blaze/util/mpl/Not.h>
 #include <blaze/util/mpl/Or.h>
 #include <blaze/util/TrueType.h>
 #include <blaze/util/TypeList.h>
@@ -462,6 +460,7 @@ inline decltype(auto) column( const MatMatMultExpr<MT>& matrix, RCAs... args )
 // \param matrix The constant outer product.
 // \param args Optional column arguments.
 // \return View on the specified column of the outer product.
+// \exception std::invalid_argument Invalid column access index.
 //
 // This function returns an expression representing the specified column of the given outer
 // product.
@@ -496,6 +495,7 @@ inline decltype(auto) column( const VecTVecMultExpr<MT>& matrix, RCAs... args )
 // \param index The index of the column.
 // \param args Optional column arguments.
 // \return View on the specified column of the outer product.
+// \exception std::invalid_argument Invalid column access index.
 //
 // This function returns an expression representing the specified column of the given outer
 // product.
@@ -938,137 +938,6 @@ inline bool isIntact( const Column<MT,SO,DF,SF,CCAs...>& column ) noexcept
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
-/*!\brief Backend of the isSame() function for two regular columns.
-// \ingroup column
-//
-// \param a The first column to be tested for its state.
-// \param b The second column to be tested for its state.
-// \return \a true in case the two columns share a state, \a false otherwise.
-//
-// This backend implementation of the isSame() function handles the special case of two
-// regular columns. In case both columns represent the same observable state, the function
-// returns \a true, otherwise it returns \a false.
-*/
-template< typename MT1       // Type of the matrix of the left-hand side column
-        , bool SO            // Storage order
-        , bool DF            // Density flag
-        , bool SF1           // Symmetry flag of the left-hand side column
-        , size_t... CCAs1    // Compile time column arguments of the left-hand side column
-        , typename MT2       // Type of the matrix of the right-hand side column
-        , bool SF2           // Symmetry flag of the right-hand side column
-        , size_t... CCAs2 >  // Compile time column arguments of the right-hand side column
-inline DisableIf_< Or< IsSubmatrix<MT1>, IsSubmatrix<MT2> >, bool >
-   isSame_backend( const Column<MT1,SO,DF,SF1,CCAs1...>& a,
-                   const Column<MT2,SO,DF,SF2,CCAs2...>& b ) noexcept
-{
-   return ( isSame( a.operand(), b.operand() ) && ( a.column() == b.column() ) );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Backend of the isSame() function for the left column being a column on a submatrix.
-// \ingroup column
-//
-// \param a The first column to be tested for its state.
-// \param b The second column to be tested for its state.
-// \return \a true in case the two columns share a state, \a false otherwise.
-//
-// This backend implementation of the isSame() function handles the special case of the left
-// column being a column on a submatrix. In case both columns represent the same observable
-// state, the function returns \a true, otherwise it returns \a false.
-*/
-template< typename MT1       // Type of the submatrix of the left-hand side column
-        , bool SO            // Storage order
-        , bool DF            // Density flag
-        , bool SF1           // Symmetry flag of the left-hand side column
-        , size_t... CCAs1    // Compile time column arguments of the left-hand side column
-        , typename MT2       // Type of the matrix of the right-hand side column
-        , bool SF2           // Symmetry flag of the right-hand side column
-        , size_t... CCAs2 >  // Compile time column arguments of the right-hand side column
-inline EnableIf_< And< IsSubmatrix<MT1>, Not< IsSubmatrix<MT2> > >, bool >
-   isSame_backend( const Column<MT1,SO,DF,SF1,CCAs1...>& a,
-                   const Column<MT2,SO,DF,SF2,CCAs2...>& b ) noexcept
-{
-   return ( isSame( a.operand().operand(), b.operand() ) &&
-            ( a.size() == b.size() ) &&
-            ( a.column() + a.operand().column() == b.column() ) );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Backend of the isSame() function for the right column being a column on a submatrix.
-// \ingroup column
-//
-// \param a The first column to be tested for its state.
-// \param b The second column to be tested for its state.
-// \return \a true in case the two columns share a state, \a false otherwise.
-//
-// This backend implementation of the isSame() function handles the special case of the right
-// column being a column on a submatrix. In case both columns represent the same observable
-// state, the function returns \a true, otherwise it returns \a false.
-*/
-template< typename MT1       // Type of the matrix of the left-hand side column
-        , bool SO            // Storage order
-        , bool DF            // Density flag
-        , bool SF1           // Symmetry flag of the left-hand side column
-        , size_t... CCAs1    // Compile time column arguments of the left-hand side column
-        , typename MT2       // Type of the submatrix of the right-hand side column
-        , bool SF2           // Symmetry flag of the right-hand side column
-        , size_t... CCAs2 >  // Compile time column arguments of the right-hand side column
-inline EnableIf_< And< Not< IsSubmatrix<MT1> >, IsSubmatrix<MT2> >, bool >
-   isSame_backend( const Column<MT1,SO,DF,SF1,CCAs1...>& a,
-                   const Column<MT2,SO,DF,SF2,CCAs2...>& b ) noexcept
-{
-   return ( isSame( a.operand(), b.operand().operand() ) &&
-            ( a.size() == b.size() ) &&
-            ( a.column() == b.column() + b.operand().column() ) );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Backend of the isSame() function for two columns on submatrices.
-// \ingroup column
-//
-// \param a The first column to be tested for its state.
-// \param b The second column to be tested for its state.
-// \return \a true in case the two columns share a state, \a false otherwise.
-//
-// This backend implementation of the isSame() function handles the special case of both columns
-// being columns on submatrices. In case both columns represent the same observable state, the
-// function returns \a true, otherwise it returns \a false.
-*/
-template< typename MT1       // Type of the submatrix of the left-hand side column
-        , bool SO            // Storage order
-        , bool DF            // Density flag
-        , bool SF1           // Symmetry flag of the left-hand side column
-        , size_t... CCAs1    // Compile time column arguments of the left-hand side column
-        , typename MT2       // Type of the submatrix of the right-hand side column
-        , bool SF2           // Symmetry flag of the right-hand side column
-        , size_t... CCAs2 >  // Compile time column arguments of the right-hand side column
-inline EnableIf_< And< IsSubmatrix<MT1>, IsSubmatrix<MT2> >, bool >
-   isSame_backend( const Column<MT1,SO,DF,SF1,CCAs1...>& a,
-                   const Column<MT2,SO,DF,SF2,CCAs2...>& b ) noexcept
-{
-   return ( isSame( a.operand().operand(), b.operand().operand() ) &&
-            ( a.size() == b.size() ) &&
-            ( a.column() + a.operand().column() == b.column() + b.operand().column() ) &&
-            ( a.operand().row() == b.operand().row() ) );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
 /*!\brief Returns whether the two given columns represent the same observable state.
 // \ingroup column
 //
@@ -1091,7 +960,7 @@ template< typename MT1       // Type of the matrix of the left-hand side column
 inline bool isSame( const Column<MT1,SO,DF,SF1,CCAs1...>& a,
                     const Column<MT2,SO,DF,SF2,CCAs2...>& b ) noexcept
 {
-   return isSame_backend( a, b );
+   return ( isSame( a.operand(), b.operand() ) && ( a.column() == b.column() ) );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1104,8 +973,8 @@ inline bool isSame( const Column<MT1,SO,DF,SF1,CCAs1...>& a,
 //
 // \param sv The target column.
 // \param index The index of the element to be set.
-// \param value The value of the element to be set.
-// \return \a true in case the set operation would be successful, \a false if not.
+// \param value The value to be set to the element.
+// \return \a true in case the operation would be successful, \a false if not.
 //
 // This function must \b NOT be called explicitly! It is used internally for the performance
 // optimized evaluation of expression templates. Calling this function explicitly might result
@@ -1120,9 +989,201 @@ template< typename MT     // Type of the matrix
         , typename ET >   // Type of the element
 inline bool trySet( const Column<MT,SO,DF,SF,CCAs...>& column, size_t index, const ET& value )
 {
-   BLAZE_INTERNAL_ASSERT( index <= column.size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index < column.size(), "Invalid vector access index" );
 
    return trySet( column.operand(), index, column.column(), value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by adding to a single element of a column.
+// \ingroup column
+//
+// \param sv The target column.
+// \param index The index of the element to be modified.
+// \param value The value to be added to the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CCAs  // Compile time column arguments
+        , typename ET >   // Type of the element
+inline bool tryAdd( const Column<MT,SO,DF,SF,CCAs...>& column, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < column.size(), "Invalid vector access index" );
+
+   return tryAdd( column.operand(), index, column.column(), value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by subtracting from a single element of a column.
+// \ingroup column
+//
+// \param sv The target column.
+// \param index The index of the element to be modified.
+// \param value The value to be subtracted from the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CCAs  // Compile time column arguments
+        , typename ET >   // Type of the element
+inline bool trySub( const Column<MT,SO,DF,SF,CCAs...>& column, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < column.size(), "Invalid vector access index" );
+
+   return trySub( column.operand(), index, column.column(), value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a column.
+// \ingroup column
+//
+// \param sv The target column.
+// \param index The index of the element to be modified.
+// \param value The factor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CCAs  // Compile time column arguments
+        , typename ET >   // Type of the element
+inline bool tryMult( const Column<MT,SO,DF,SF,CCAs...>& column, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < column.size(), "Invalid vector access index" );
+
+   return tryMult( column.operand(), index, column.column(), value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a column.
+// \ingroup column
+//
+// \param column The target column.
+// \param index The index of the first element of the range to be modified.
+// \param size The number of elements of the range to be modified.
+// \param value The factor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CCAs  // Compile time column arguments
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryMult( const Column<MT,SO,DF,SF,CCAs...>& column, size_t index, size_t size, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index <= (~column).size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index + size <= (~column).size(), "Invalid range size" );
+
+   return tryMult( column.operand(), index, column.column(), size, 1UL, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a column.
+// \ingroup column
+//
+// \param sv The target column.
+// \param index The index of the element to be modified.
+// \param value The divisor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CCAs  // Compile time column arguments
+        , typename ET >   // Type of the element
+inline bool tryDiv( const Column<MT,SO,DF,SF,CCAs...>& column, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < column.size(), "Invalid vector access index" );
+
+   return tryDiv( column.operand(), index, column.column(), value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a column.
+// \ingroup column
+//
+// \param column The target column.
+// \param index The index of the first element of the range to be modified.
+// \param size The number of elements of the range to be modified.
+// \param value The divisor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CCAs  // Compile time column arguments
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryDiv( const Column<MT,SO,DF,SF,CCAs...>& column, size_t index, size_t size, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index <= (~column).size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index + size <= (~column).size(), "Invalid range size" );
+
+   return tryDiv( column.operand(), index, column.column(), size, 1UL, value );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1153,9 +1214,9 @@ inline bool tryAssign( const Column<MT,SO,DF,SF,CCAs...>& lhs,
                        const Vector<VT,false>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
-   return tryAssign( lhs.operand(), ~rhs, index, lhs.column );
+   return tryAssign( lhs.operand(), ~rhs, index, lhs.column() );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1186,7 +1247,7 @@ inline bool tryAddAssign( const Column<MT,SO,SF,SF,CCAs...>& lhs,
                           const Vector<VT,false>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryAddAssign( lhs.operand(), ~rhs, index, lhs.column() );
 }
@@ -1219,7 +1280,7 @@ inline bool trySubAssign( const Column<MT,SO,DF,SF,CCAs...>& lhs,
                           const Vector<VT,false>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return trySubAssign( lhs.operand(), ~rhs, index, lhs.column() );
 }
@@ -1252,7 +1313,7 @@ inline bool tryMultAssign( const Column<MT,SO,DF,SF,CCAs...>& lhs,
                            const Vector<VT,false>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryMultAssign( lhs.operand(), ~rhs, index, lhs.column() );
 }
@@ -1285,7 +1346,7 @@ inline bool tryDivAssign( const Column<MT,SO,DF,SF,CCAs...>& lhs,
                           const Vector<VT,false>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryDivAssign( lhs.operand(), ~rhs, index, lhs.column() );
 }
@@ -1488,6 +1549,24 @@ struct HasMutableDataAccess< Column<MT,SO,true,SF,CCAs...> >
 template< typename MT, bool SO, bool SF, size_t... CCAs >
 struct IsAligned< Column<MT,SO,true,SF,CCAs...> >
    : public And< IsAligned<MT>, Or< IsColumnMajorMatrix<MT>, IsSymmetric<MT> > >
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ISCONTIGOUS SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename MT, bool SF, size_t... CCAs >
+struct IsContiguous< Column<MT,true,true,SF,CCAs...> >
+   : public IsContiguous<MT>
 {};
 /*! \endcond */
 //*************************************************************************************************

@@ -3,7 +3,7 @@
 //  \file src/mathtest/submatrix/DenseAlignedTest2.cpp
 //  \brief Source file for the Submatrix dense aligned test (part 2)
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -81,7 +81,10 @@ DenseAlignedTest::DenseAlignedTest()
    testIsSame();
    testSubmatrix();
    testRow();
+   testRows();
    testColumn();
+   testColumns();
+   testBand();
 }
 //*************************************************************************************************
 
@@ -1225,14 +1228,14 @@ void DenseAlignedTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 0th row of a 8x16 matrix via Iterator
+      // Counting the number of elements in 0th row of a 8x16 matrix via Iterator (end-begin)
       {
-         test_ = "Row-major Iterator subtraction";
+         test_ = "Row-major Iterator subtraction (end-begin)";
 
          ASMT sm = submatrix<aligned>( mat1_, 8UL, 16UL, 8UL, 16UL );
-         const size_t number( end( sm, 0UL ) - begin( sm, 0UL ) );
+         const ptrdiff_t number( end( sm, 0UL ) - begin( sm, 0UL ) );
 
-         if( number != 16UL ) {
+         if( number != 16L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1243,20 +1246,56 @@ void DenseAlignedTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 15th row of a 16x8 matrix via ConstIterator
+      // Counting the number of elements in 0th row of a 8x16 matrix via Iterator (begin-end)
       {
-         test_ = "Row-major ConstIterator subtraction";
+         test_ = "Row-major Iterator subtraction (begin-end)";
+
+         ASMT sm = submatrix<aligned>( mat1_, 8UL, 16UL, 8UL, 16UL );
+         const ptrdiff_t number( begin( sm, 0UL ) - end( sm, 0UL ) );
+
+         if( number != -16L ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid number of elements detected\n"
+                << " Details:\n"
+                << "   Number of elements         : " << number << "\n"
+                << "   Expected number of elements: -16\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // Counting the number of elements in 15th row of a 16x8 matrix via ConstIterator (end-begin)
+      {
+         test_ = "Row-major ConstIterator subtraction (end-begin)";
 
          ASMT sm = submatrix<aligned>( mat1_, 16UL, 8UL, 16UL, 8UL );
-         const size_t number( cend( sm, 15UL ) - cbegin( sm, 15UL ) );
+         const ptrdiff_t number( cend( sm, 15UL ) - cbegin( sm, 15UL ) );
 
-         if( number != 8UL ) {
+         if( number != 8L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
                 << " Details:\n"
                 << "   Number of elements         : " << number << "\n"
                 << "   Expected number of elements: 8\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // Counting the number of elements in 15th row of a 16x8 matrix via ConstIterator (begin-end)
+      {
+         test_ = "Row-major ConstIterator subtraction (begin-end)";
+
+         ASMT sm = submatrix<aligned>( mat1_, 16UL, 8UL, 16UL, 8UL );
+         const ptrdiff_t number( cbegin( sm, 15UL ) - cend( sm, 15UL ) );
+
+         if( number != -8L ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid number of elements detected\n"
+                << " Details:\n"
+                << "   Number of elements         : " << number << "\n"
+                << "   Expected number of elements: -8\n";
             throw std::runtime_error( oss.str() );
          }
       }
@@ -1548,14 +1587,14 @@ void DenseAlignedTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 0th column of a 16x8 matrix via Iterator
+      // Counting the number of elements in 0th column of a 16x8 matrix via Iterator (end-begin)
       {
-         test_ = "Column-major Iterator subtraction";
+         test_ = "Column-major Iterator subtraction (end-begin)";
 
          AOSMT sm = submatrix<aligned>( tmat1_, 16UL, 8UL, 16UL, 8UL );
-         const size_t number( end( sm, 0UL ) - begin( sm, 0UL ) );
+         const ptrdiff_t number( end( sm, 0UL ) - begin( sm, 0UL ) );
 
-         if( number != 16UL ) {
+         if( number != 16L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1566,20 +1605,56 @@ void DenseAlignedTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 15th column of a 8x16 matrix via ConstIterator
+      // Counting the number of elements in 0th column of a 16x8 matrix via Iterator (begin-end)
       {
-         test_ = "Column-major ConstIterator subtraction";
+         test_ = "Column-major Iterator subtraction (begin-end)";
+
+         AOSMT sm = submatrix<aligned>( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         const ptrdiff_t number( begin( sm, 0UL ) - end( sm, 0UL ) );
+
+         if( number != -16L ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid number of elements detected\n"
+                << " Details:\n"
+                << "   Number of elements         : " << number << "\n"
+                << "   Expected number of elements: -16\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // Counting the number of elements in 15th column of a 8x16 matrix via ConstIterator (end-begin)
+      {
+         test_ = "Column-major ConstIterator subtraction (end-begin)";
 
          AOSMT sm = submatrix<aligned>( tmat1_, 8UL, 16UL, 8UL, 16UL );
-         const size_t number( cend( sm, 15UL ) - cbegin( sm, 15UL ) );
+         const ptrdiff_t number( cend( sm, 15UL ) - cbegin( sm, 15UL ) );
 
-         if( number != 8UL ) {
+         if( number != 8L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
                 << " Details:\n"
                 << "   Number of elements         : " << number << "\n"
                 << "   Expected number of elements: 8\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // Counting the number of elements in 15th column of a 8x16 matrix via ConstIterator (begin-end)
+      {
+         test_ = "Column-major ConstIterator subtraction (begin-end)";
+
+         AOSMT sm = submatrix<aligned>( tmat1_, 8UL, 16UL, 8UL, 16UL );
+         const ptrdiff_t number( cbegin( sm, 15UL ) - cend( sm, 15UL ) );
+
+         if( number != -8L ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid number of elements detected\n"
+                << " Details:\n"
+                << "   Number of elements         : " << number << "\n"
+                << "   Expected number of elements: -8\n";
             throw std::runtime_error( oss.str() );
          }
       }
@@ -2769,11 +2844,11 @@ void DenseAlignedTest::testIsSame()
 
 
    //=====================================================================================
-   // Row-major submatrix tests
+   // Row-major matrix-based tests
    //=====================================================================================
 
    {
-      test_ = "Row-major isSame() function";
+      test_ = "Row-major isSame() function (matrix-based)";
 
       // isSame with matrix and matching submatrix
       {
@@ -2983,11 +3058,459 @@ void DenseAlignedTest::testIsSame()
 
 
    //=====================================================================================
-   // Column-major submatrix tests
+   // Row-major rows-based tests
    //=====================================================================================
 
    {
-      test_ = "Column-major isSame() function";
+      test_ = "Row-major isSame() function (rows-based)";
+
+      // isSame with row selection and matching submatrix
+      {
+         auto rs = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 0UL, 0UL, 4UL, 64UL );
+
+         if( blaze::isSame( sm, rs ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with row selection and non-matching submatrix (different number of rows)
+      {
+         auto rs = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 64UL );
+
+         if( blaze::isSame( sm, rs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with row selection and non-matching submatrix (different number of columns)
+      {
+         auto rs = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 0UL, 0UL, 4UL, 32UL );
+
+         if( blaze::isSame( sm, rs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with row selection and non-matching submatrix (different row index)
+      {
+         auto rs = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 1UL, 0UL, 3UL, 64UL );
+
+         if( blaze::isSame( sm, rs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with row selection and non-matching submatrix (different column index)
+      {
+         auto rs = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 0UL, 16UL, 4UL, 48UL );
+
+         if( blaze::isSame( sm, rs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with matching submatrices
+      {
+         auto rs  = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+
+         if( blaze::isSame( sm1, sm2 ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different number of rows)
+      {
+         auto rs  = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 0UL, 0UL, 2UL, 32UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different number of columns)
+      {
+         auto rs  = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 48UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different row index)
+      {
+         auto rs  = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 1UL, 0UL, 3UL, 32UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different column index)
+      {
+         auto rs  = blaze::rows( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL,  0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 0UL, 16UL, 3UL, 32UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+   }
+
+
+   //=====================================================================================
+   // Row-major columns-based tests
+   //=====================================================================================
+
+   {
+      test_ = "Row-major isSame() function (columns-based)";
+
+      // isSame with column selection and matching submatrix
+      {
+         auto cs = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 0UL, 0UL, 64UL, 4UL );
+
+         if( blaze::isSame( sm, cs ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with column selection and non-matching submatrix (different number of rows)
+      {
+         auto cs = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 4UL );
+
+         if( blaze::isSame( sm, cs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with column selection and non-matching submatrix (different number of columns)
+      {
+         auto cs = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 0UL, 0UL, 64UL, 3UL );
+
+         if( blaze::isSame( sm, cs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with column selection and non-matching submatrix (different row index)
+      {
+         auto cs = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 16UL, 0UL, 48UL, 4UL );
+
+         if( blaze::isSame( sm, cs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with column selection and non-matching submatrix (different column index)
+      {
+         auto cs = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 0UL, 1UL, 64UL, 3UL );
+
+         if( blaze::isSame( sm, cs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with matching submatrices
+      {
+         auto cs  = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+
+         if( blaze::isSame( sm1, sm2 ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different number of rows)
+      {
+         auto cs  = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 0UL, 0UL, 48UL, 3UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different number of columns)
+      {
+         auto cs  = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 2UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different row index)
+      {
+         auto cs  = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs,  0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 16UL, 0UL, 32UL, 3UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different column index)
+      {
+         auto cs  = blaze::columns( mat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 0UL, 1UL, 32UL, 3UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+   }
+
+
+   //=====================================================================================
+   // Column-major matrix-based tests
+   //=====================================================================================
+
+   {
+      test_ = "Column-major isSame() function (matrix-based)";
 
       // isSame with matrix and matching submatrix
       {
@@ -3182,6 +3705,454 @@ void DenseAlignedTest::testIsSame()
       {
          AOSMT sm1 = submatrix<aligned>( tmat1_, 16UL,  0UL, 32UL, 16UL );
          AOSMT sm2 = submatrix<aligned>( tmat1_, 16UL, 16UL, 32UL, 16UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+   }
+
+
+   //=====================================================================================
+   // Column-major rows-based tests
+   //=====================================================================================
+
+   {
+      test_ = "Column-major isSame() function (rows-based)";
+
+      // isSame with row selection and matching submatrix
+      {
+         auto rs = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 0UL, 0UL, 4UL, 64UL );
+
+         if( blaze::isSame( sm, rs ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with row selection and non-matching submatrix (different number of rows)
+      {
+         auto rs = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 64UL );
+
+         if( blaze::isSame( sm, rs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with row selection and non-matching submatrix (different number of columns)
+      {
+         auto rs = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 0UL, 0UL, 4UL, 32UL );
+
+         if( blaze::isSame( sm, rs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with row selection and non-matching submatrix (different row index)
+      {
+         auto rs = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 1UL, 0UL, 3UL, 64UL );
+
+         if( blaze::isSame( sm, rs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with row selection and non-matching submatrix (different column index)
+      {
+         auto rs = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( rs, 0UL, 16UL, 4UL, 48UL );
+
+         if( blaze::isSame( sm, rs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( rs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Row selection:\n" << rs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with matching submatrices
+      {
+         auto rs  = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+
+         if( blaze::isSame( sm1, sm2 ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different number of rows)
+      {
+         auto rs  = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 0UL, 0UL, 2UL, 32UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different number of columns)
+      {
+         auto rs  = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 48UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different row index)
+      {
+         auto rs  = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL, 0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 1UL, 0UL, 3UL, 32UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different column index)
+      {
+         auto rs  = blaze::rows( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( rs, 0UL,  0UL, 3UL, 32UL );
+         auto sm2 = submatrix<aligned>( rs, 0UL, 16UL, 3UL, 48UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+   }
+
+
+   //=====================================================================================
+   // Column-major columns-based tests
+   //=====================================================================================
+
+   {
+      test_ = "Column-major isSame() function (columns-based)";
+
+      // isSame with column selection and matching submatrix
+      {
+         auto cs = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 0UL, 0UL, 64UL, 4UL );
+
+         if( blaze::isSame( sm, cs ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with column selection and non-matching submatrix (different number of rows)
+      {
+         auto cs = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 4UL );
+
+         if( blaze::isSame( sm, cs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with column selection and non-matching submatrix (different number of columns)
+      {
+         auto cs = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 0UL, 0UL, 64UL, 3UL );
+
+         if( blaze::isSame( sm, cs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with column selection and non-matching submatrix (different row index)
+      {
+         auto cs = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 16UL, 0UL, 48UL, 4UL );
+
+         if( blaze::isSame( sm, cs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with column selection and non-matching submatrix (different column index)
+      {
+         auto cs = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm = submatrix<aligned>( cs, 0UL, 1UL, 64UL, 3UL );
+
+         if( blaze::isSame( sm, cs ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( blaze::isSame( cs, sm ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   Column selection:\n" << cs << "\n"
+                << "   Submatrix:\n" << sm << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with matching submatrices
+      {
+         auto cs  = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+
+         if( blaze::isSame( sm1, sm2 ) == false ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different number of rows)
+      {
+         auto cs  = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 0UL, 0UL, 48UL, 3UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different number of columns)
+      {
+         auto cs  = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 2UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different row index)
+      {
+         auto cs  = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 16UL, 0UL, 32UL, 3UL );
+
+         if( blaze::isSame( sm1, sm2 ) == true ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid isSame evaluation\n"
+                << " Details:\n"
+                << "   First submatrix:\n" << sm1 << "\n"
+                << "   Second submatrix:\n" << sm2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // isSame with non-matching submatrices (different column index)
+      {
+         auto cs  = blaze::columns( tmat1_, { 0UL, 16UL, 32UL, 48UL } );
+         auto sm1 = submatrix<aligned>( cs, 0UL, 0UL, 32UL, 3UL );
+         auto sm2 = submatrix<aligned>( cs, 0UL, 1UL, 32UL, 3UL );
 
          if( blaze::isSame( sm1, sm2 ) == true ) {
             std::ostringstream oss;
@@ -3428,6 +4399,7 @@ void DenseAlignedTest::testSubmatrix()
 void DenseAlignedTest::testRow()
 {
    using blaze::submatrix;
+   using blaze::row;
    using blaze::aligned;
    using blaze::unaligned;
 
@@ -3441,40 +4413,55 @@ void DenseAlignedTest::testRow()
 
       initialize();
 
-      ASMT sm1  = submatrix<aligned>  ( mat1_, 8UL, 16UL, 8UL, 16UL );
-      USMT sm2  = submatrix<unaligned>( mat2_, 8UL, 16UL, 8UL, 16UL );
-      auto row1 = row( sm1, 1UL );
-      auto row2 = row( sm2, 1UL );
+      {
+         ASMT sm1  = submatrix<aligned>  ( mat1_, 8UL, 16UL, 8UL, 16UL );
+         USMT sm2  = submatrix<unaligned>( mat2_, 8UL, 16UL, 8UL, 16UL );
+         auto row1 = row( sm1, 1UL );
+         auto row2 = row( sm2, 1UL );
 
-      if( row1 != row2 ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Row function failed\n"
-             << " Details:\n"
-             << "   Result:\n" << row1 << "\n"
-             << "   Expected result:\n" << row2 << "\n";
-         throw std::runtime_error( oss.str() );
+         if( row1 != row2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Row function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << row1 << "\n"
+                << "   Expected result:\n" << row2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( row1[1] != row2[1] ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << row1[1] << "\n"
+                << "   Expected result: " << row2[1] << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *row1.begin() != *row2.begin() ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *row1.begin() << "\n"
+                << "   Expected result: " << *row2.begin() << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( row1[1] != row2[1] ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Subscript operator access failed\n"
-             << " Details:\n"
-             << "   Result: " << row1[1] << "\n"
-             << "   Expected result: " << row2[1] << "\n";
-         throw std::runtime_error( oss.str() );
-      }
+      try {
+         ASMT sm1  = submatrix<aligned>( mat1_, 8UL, 16UL, 8UL, 16UL );
+         auto row8 = row( sm1, 8UL );
 
-      if( *row1.begin() != *row2.begin() ) {
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Iterator access failed\n"
+             << " Error: Setup of out-of-bounds row succeeded\n"
              << " Details:\n"
-             << "   Result: " << *row1.begin() << "\n"
-             << "   Expected result: " << *row2.begin() << "\n";
+             << "   Result:\n" << row8 << "\n";
          throw std::runtime_error( oss.str() );
       }
+      catch( std::invalid_argument& ) {}
    }
 
 
@@ -3487,40 +4474,196 @@ void DenseAlignedTest::testRow()
 
       initialize();
 
-      AOSMT sm1  = submatrix<aligned>  ( tmat1_, 16UL, 8UL, 16UL, 8UL );
-      UOSMT sm2  = submatrix<unaligned>( tmat2_, 16UL, 8UL, 16UL, 8UL );
-      auto  row1 = row( sm1, 1UL );
-      auto  row2 = row( sm2, 1UL );
+      {
+         AOSMT sm1  = submatrix<aligned>  ( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         UOSMT sm2  = submatrix<unaligned>( tmat2_, 16UL, 8UL, 16UL, 8UL );
+         auto  row1 = row( sm1, 1UL );
+         auto  row2 = row( sm2, 1UL );
 
-      if( row1 != row2 ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Row function failed\n"
-             << " Details:\n"
-             << "   Result:\n" << row1 << "\n"
-             << "   Expected result:\n" << row2 << "\n";
-         throw std::runtime_error( oss.str() );
+         if( row1 != row2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Row function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << row1 << "\n"
+                << "   Expected result:\n" << row2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( row1[1] != row2[1] ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << row1[1] << "\n"
+                << "   Expected result: " << row2[1] << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *row1.begin() != *row2.begin() ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *row1.begin() << "\n"
+                << "   Expected result: " << *row2.begin() << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( row1[1] != row2[1] ) {
+      try {
+         AOSMT sm1   = submatrix<aligned>( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         auto  row16 = row( sm1, 16UL );
+
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Subscript operator access failed\n"
+             << " Error: Setup of out-of-bounds row succeeded\n"
              << " Details:\n"
-             << "   Result: " << row1[1] << "\n"
-             << "   Expected result: " << row2[1] << "\n";
+             << "   Result:\n" << row16 << "\n";
          throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
+   }
+}
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*!\brief Test of the \c rows() function with the Submatrix class template.
+//
+// \return void
+// \exception std::runtime_error Error detected.
+//
+// This function performs a test of the \c rows() function with the Submatrix specialization.
+// In case an error is detected, a \a std::runtime_error exception is thrown.
+*/
+void DenseAlignedTest::testRows()
+{
+   using blaze::submatrix;
+   using blaze::rows;
+   using blaze::aligned;
+   using blaze::unaligned;
+
+
+   //=====================================================================================
+   // Row-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Row-major rows() function";
+
+      initialize();
+
+      {
+         ASMT sm1 = submatrix<aligned>  ( mat1_, 8UL, 16UL, 8UL, 16UL );
+         USMT sm2 = submatrix<unaligned>( mat2_, 8UL, 16UL, 8UL, 16UL );
+         auto rs1 = rows( sm1, { 0UL, 2UL, 4UL, 6UL } );
+         auto rs2 = rows( sm2, { 0UL, 2UL, 4UL, 6UL } );
+
+         if( rs1 != rs2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Rows function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << rs1 << "\n"
+                << "   Expected result:\n" << rs2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( rs1(1,1) != rs2(1,1) ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Function call operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << rs1(1,1) << "\n"
+                << "   Expected result: " << rs2(1,1) << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *rs1.begin( 1UL ) != *rs2.begin( 1UL ) ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *rs1.begin( 1UL ) << "\n"
+                << "   Expected result: " << *rs2.begin( 1UL ) << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( *row1.begin() != *row2.begin() ) {
+      try {
+         ASMT sm1 = submatrix<aligned>( mat1_, 8UL, 16UL, 8UL, 16UL );
+         auto rs  = rows( sm1, { 8UL } );
+
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Iterator access failed\n"
+             << " Error: Setup of out-of-bounds row selection succeeded\n"
              << " Details:\n"
-             << "   Result: " << *row1.begin() << "\n"
-             << "   Expected result: " << *row2.begin() << "\n";
+             << "   Result:\n" << rs << "\n";
          throw std::runtime_error( oss.str() );
       }
+      catch( std::invalid_argument& ) {}
+   }
+
+
+   //=====================================================================================
+   // Column-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Column-major rows() function";
+
+      initialize();
+
+      {
+         AOSMT sm1 = submatrix<aligned>  ( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         UOSMT sm2 = submatrix<unaligned>( tmat2_, 16UL, 8UL, 16UL, 8UL );
+         auto  rs1 = rows( sm1, { 0UL, 2UL, 4UL, 6UL } );
+         auto  rs2 = rows( sm2, { 0UL, 2UL, 4UL, 6UL } );
+
+         if( rs1 != rs2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Rows function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << rs1 << "\n"
+                << "   Expected result:\n" << rs2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( rs1(1,1) != rs2(1,1) ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Function call operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << rs1(1,1) << "\n"
+                << "   Expected result: " << rs2(1,1) << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *rs1.begin( 1UL ) != *rs2.begin( 1UL ) ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *rs1.begin( 1UL ) << "\n"
+                << "   Expected result: " << *rs2.begin( 1UL ) << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      try {
+         AOSMT sm1   = submatrix<aligned>( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         auto  row16 = rows( sm1, { 16UL } );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds row selection succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << row16 << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
    }
 }
 //*************************************************************************************************
@@ -3538,6 +4681,7 @@ void DenseAlignedTest::testRow()
 void DenseAlignedTest::testColumn()
 {
    using blaze::submatrix;
+   using blaze::column;
    using blaze::aligned;
    using blaze::unaligned;
 
@@ -3551,40 +4695,55 @@ void DenseAlignedTest::testColumn()
 
       initialize();
 
-      ASMT sm1  = submatrix<aligned>  ( mat1_, 8UL, 16UL, 8UL, 16UL );
-      USMT sm2  = submatrix<unaligned>( mat2_, 8UL, 16UL, 8UL, 16UL );
-      auto col1 = column( sm1, 1UL );
-      auto col2 = column( sm2, 1UL );
+      {
+         ASMT sm1  = submatrix<aligned>  ( mat1_, 8UL, 16UL, 8UL, 16UL );
+         USMT sm2  = submatrix<unaligned>( mat2_, 8UL, 16UL, 8UL, 16UL );
+         auto col1 = column( sm1, 1UL );
+         auto col2 = column( sm2, 1UL );
 
-      if( col1 != col2 ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Column function failed\n"
-             << " Details:\n"
-             << "   Result:\n" << col1 << "\n"
-             << "   Expected result:\n" << col2 << "\n";
-         throw std::runtime_error( oss.str() );
+         if( col1 != col2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Column function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << col1 << "\n"
+                << "   Expected result:\n" << col2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( col1[1] != col2[1] ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << col1[1] << "\n"
+                << "   Expected result: " << col2[1] << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *col1.begin() != *col2.begin() ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *col1.begin() << "\n"
+                << "   Expected result: " << *col2.begin() << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( col1[1] != col2[1] ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Subscript operator access failed\n"
-             << " Details:\n"
-             << "   Result: " << col1[1] << "\n"
-             << "   Expected result: " << col2[1] << "\n";
-         throw std::runtime_error( oss.str() );
-      }
+      try {
+         ASMT sm1   = submatrix<aligned>( mat1_, 8UL, 16UL, 8UL, 16UL );
+         auto col16 = column( sm1, 16UL );
 
-      if( *col1.begin() != *col2.begin() ) {
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Iterator access failed\n"
+             << " Error: Setup of out-of-bounds column succeeded\n"
              << " Details:\n"
-             << "   Result: " << *col1.begin() << "\n"
-             << "   Expected result: " << *col2.begin() << "\n";
+             << "   Result:\n" << col16 << "\n";
          throw std::runtime_error( oss.str() );
       }
+      catch( std::invalid_argument& ) {}
    }
 
 
@@ -3597,40 +4756,337 @@ void DenseAlignedTest::testColumn()
 
       initialize();
 
-      AOSMT sm1  = submatrix<aligned>  ( tmat1_, 16UL, 8UL, 16UL, 8UL );
-      UOSMT sm2  = submatrix<unaligned>( tmat2_, 16UL, 8UL, 16UL, 8UL );
-      auto  col1 = column( sm1, 1UL );
-      auto  col2 = column( sm2, 1UL );
+      {
+         AOSMT sm1  = submatrix<aligned>  ( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         UOSMT sm2  = submatrix<unaligned>( tmat2_, 16UL, 8UL, 16UL, 8UL );
+         auto  col1 = column( sm1, 1UL );
+         auto  col2 = column( sm2, 1UL );
 
-      if( col1 != col2 ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Column function failed\n"
-             << " Details:\n"
-             << "   Result:\n" << col1 << "\n"
-             << "   Expected result:\n" << col2 << "\n";
-         throw std::runtime_error( oss.str() );
+         if( col1 != col2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Column function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << col1 << "\n"
+                << "   Expected result:\n" << col2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( col1[1] != col2[1] ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << col1[1] << "\n"
+                << "   Expected result: " << col2[1] << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *col1.begin() != *col2.begin() ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *col1.begin() << "\n"
+                << "   Expected result: " << *col2.begin() << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( col1[1] != col2[1] ) {
+      try {
+         AOSMT sm1  = submatrix<aligned>( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         auto  col8 = column( sm1, 8UL );
+
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Subscript operator access failed\n"
+             << " Error: Setup of out-of-bounds column succeeded\n"
              << " Details:\n"
-             << "   Result: " << col1[1] << "\n"
-             << "   Expected result: " << col2[1] << "\n";
+             << "   Result:\n" << col8 << "\n";
          throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
+   }
+}
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*!\brief Test of the \c columns() function with the Submatrix class template.
+//
+// \return void
+// \exception std::runtime_error Error detected.
+//
+// This function performs a test of the \c columns() function with the Submatrix specialization.
+// In case an error is detected, a \a std::runtime_error exception is thrown.
+*/
+void DenseAlignedTest::testColumns()
+{
+   using blaze::submatrix;
+   using blaze::rows;
+   using blaze::aligned;
+   using blaze::unaligned;
+
+
+   //=====================================================================================
+   // Row-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Row-major columns() function";
+
+      initialize();
+
+      {
+         ASMT sm1 = submatrix<aligned>  ( mat1_, 8UL, 16UL, 8UL, 16UL );
+         USMT sm2 = submatrix<unaligned>( mat2_, 8UL, 16UL, 8UL, 16UL );
+         auto cs1 = columns( sm1, { 0UL, 2UL, 4UL, 6UL } );
+         auto cs2 = columns( sm2, { 0UL, 2UL, 4UL, 6UL } );
+
+         if( cs1 != cs2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Rows function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << cs1 << "\n"
+                << "   Expected result:\n" << cs2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( cs1(1,1) != cs2(1,1) ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Function call operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << cs1(1,1) << "\n"
+                << "   Expected result: " << cs2(1,1) << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *cs1.begin( 1UL ) != *cs2.begin( 1UL ) ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *cs1.begin( 1UL ) << "\n"
+                << "   Expected result: " << *cs2.begin( 1UL ) << "\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( *col1.begin() != *col2.begin() ) {
+      try {
+         ASMT sm1 = submatrix<aligned>( mat1_, 8UL, 16UL, 8UL, 16UL );
+         auto cs  = columns( sm1, { 16UL } );
+
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Iterator access failed\n"
+             << " Error: Setup of out-of-bounds column selection succeeded\n"
              << " Details:\n"
-             << "   Result: " << *col1.begin() << "\n"
-             << "   Expected result: " << *col2.begin() << "\n";
+             << "   Result:\n" << cs << "\n";
          throw std::runtime_error( oss.str() );
       }
+      catch( std::invalid_argument& ) {}
+   }
+
+
+   //=====================================================================================
+   // Column-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Column-major columns() function";
+
+      initialize();
+
+      {
+         AOSMT sm1 = submatrix<aligned>  ( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         UOSMT sm2 = submatrix<unaligned>( tmat2_, 16UL, 8UL, 16UL, 8UL );
+         auto cs1 = columns( sm1, { 0UL, 2UL, 4UL, 6UL } );
+         auto cs2 = columns( sm2, { 0UL, 2UL, 4UL, 6UL } );
+
+         if( cs1 != cs2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Rows function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << cs1 << "\n"
+                << "   Expected result:\n" << cs2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( cs1(1,1) != cs2(1,1) ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Function call operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << cs1(1,1) << "\n"
+                << "   Expected result: " << cs2(1,1) << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *cs1.begin( 1UL ) != *cs2.begin( 1UL ) ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *cs1.begin( 1UL ) << "\n"
+                << "   Expected result: " << *cs2.begin( 1UL ) << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      try {
+         AOSMT sm1 = submatrix<aligned>( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         auto cs  = columns( sm1, { 8UL } );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds column selection succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << cs << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
+   }
+}
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*!\brief Test of the \c band() function with the Submatrix class template.
+//
+// \return void
+// \exception std::runtime_error Error detected.
+//
+// This function performs a test of the \c band() function with the Submatrix specialization.
+// In case an error is detected, a \a std::runtime_error exception is thrown.
+*/
+void DenseAlignedTest::testBand()
+{
+   using blaze::submatrix;
+   using blaze::band;
+   using blaze::aligned;
+   using blaze::unaligned;
+
+
+   //=====================================================================================
+   // Row-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Row-major band() function";
+
+      initialize();
+
+      {
+         ASMT sm1  = submatrix<aligned>  ( mat1_, 8UL, 16UL, 8UL, 16UL );
+         USMT sm2  = submatrix<unaligned>( mat2_, 8UL, 16UL, 8UL, 16UL );
+         auto b1 = band( sm1, 1L );
+         auto b2 = band( sm2, 1L );
+
+         if( b1 != b2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Band function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << b1 << "\n"
+                << "   Expected result:\n" << b2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( b1[1] != b2[1] ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << b1[1] << "\n"
+                << "   Expected result: " << b2[1] << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *b1.begin() != *b2.begin() ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *b1.begin() << "\n"
+                << "   Expected result: " << *b2.begin() << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      try {
+         ASMT sm = submatrix<aligned>( mat1_, 8UL, 16UL, 8UL, 16UL );
+         auto b8 = band( sm, -8L );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds band succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << b8 << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
+   }
+
+
+   //=====================================================================================
+   // Column-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Column-major band() function";
+
+      initialize();
+
+      {
+         AOSMT sm1 = submatrix<aligned>  ( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         UOSMT sm2 = submatrix<unaligned>( tmat2_, 16UL, 8UL, 16UL, 8UL );
+         auto  b1  = band( sm1, 1L );
+         auto  b2  = band( sm2, 1L );
+
+         if( b1 != b2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Band function failed\n"
+                << " Details:\n"
+                << "   Result:\n" << b1 << "\n"
+                << "   Expected result:\n" << b2 << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( b1[1] != b2[1] ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << b1[1] << "\n"
+                << "   Expected result: " << b2[1] << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *b1.begin() != *b2.begin() ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *b1.begin() << "\n"
+                << "   Expected result: " << *b2.begin() << "\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      try {
+         AOSMT sm1 = submatrix<aligned>( tmat1_, 16UL, 8UL, 16UL, 8UL );
+         auto  b8  = band( sm1, 8L );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds band succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << b8 << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
    }
 }
 //*************************************************************************************************

@@ -1,9 +1,9 @@
 //=================================================================================================
 /*!
 //  \file blaze/math/InitializerList.h
-//  \brief Header file for the std::initializer_list aliases
+//  \brief Header file for the extended initializer_list functionality
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -40,29 +40,12 @@
 // Includes
 //*************************************************************************************************
 
-#include <initializer_list>
 #include <blaze/math/shims/IsDefault.h>
 #include <blaze/util/algorithms/Max.h>
+#include <blaze/util/InitializerList.h>
 
 
 namespace blaze {
-
-//=================================================================================================
-//
-//  TYPE DEFINITIONS
-//
-//=================================================================================================
-
-//*************************************************************************************************
-/*!\class blaze::initializer_list
-// \brief Initializer list type of the Blaze library.
-// \ingroup math
-*/
-using std::initializer_list;
-//*************************************************************************************************
-
-
-
 
 //=================================================================================================
 //

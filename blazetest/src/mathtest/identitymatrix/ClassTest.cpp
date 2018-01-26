@@ -3,7 +3,7 @@
 //  \file src/mathtest/identitymatrix/ClassTest1.cpp
 //  \brief Source file for the IdentityMatrix class test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -1150,13 +1150,13 @@ void ClassTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st row via ConstIterator
+      // Counting the number of elements in 1st row via ConstIterator (end-begin)
       {
          test_ = "Row-major ConstIterator subtraction";
 
-         const size_t number( cend( I, 1UL ) - cbegin( I, 1UL ) );
+         const ptrdiff_t number( cend( I, 1UL ) - cbegin( I, 1UL ) );
 
-         if( number != 1UL ) {
+         if( number != 1L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -1241,13 +1241,13 @@ void ClassTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st row via ConstIterator
+      // Counting the number of elements in 1st row via ConstIterator (end-begin)
       {
          test_ = "Column-major ConstIterator subtraction";
 
-         const size_t number( cend( I, 1UL ) - cbegin( I, 1UL ) );
+         const ptrdiff_t number( cend( I, 1UL ) - cbegin( I, 1UL ) );
 
-         if( number != 1UL ) {
+         if( number != 1L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"

@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/InitializerVector.h
 //  \brief Header file for the implementation of a vector representation of an initializer list
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -232,7 +232,7 @@ class InitializerVector
    /*!\name Constructors */
    //@{
    explicit inline InitializerVector( initializer_list<Type> list ) noexcept;
-   explicit inline InitializerVector( initializer_list<Type> list, size_t n ) noexcept;
+   explicit inline InitializerVector( initializer_list<Type> list, size_t n );
    // No explicitly declared copy constructor.
    //@}
    //**********************************************************************************************
@@ -356,7 +356,7 @@ inline InitializerVector<Type,TF>::InitializerVector( initializer_list<Type> lis
 */
 template< typename Type  // Data type of the vector
         , bool TF >      // Transpose flag
-inline InitializerVector<Type,TF>::InitializerVector( initializer_list<Type> list, size_t n ) noexcept
+inline InitializerVector<Type,TF>::InitializerVector( initializer_list<Type> list, size_t n )
    : size_( n    )  // The current size/dimension of the vector
    , list_( list )  // The initializer list represented by the vector
 {
@@ -585,8 +585,10 @@ template< typename Type  // Data type of the vector
         , bool TF >      // Transpose flag
 inline void InitializerVector<Type,TF>::swap( InitializerVector& v ) noexcept
 {
-   std::swap( size_, v.size_ );
-   std::swap( list_, v.list_ );
+   using std::swap;
+
+   swap( size_, v.size_ );
+   swap( list_, v.list_ );
 }
 //*************************************************************************************************
 

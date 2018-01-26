@@ -3,7 +3,7 @@
 //  \file blazetest/mathtest/row/DenseGeneralTest.h
 //  \brief Header file for the Row dense general test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -105,6 +105,7 @@ class DenseGeneralTest
    void testIsDefault();
    void testIsSame();
    void testSubvector();
+   void testElements();
 
    template< typename Type >
    void checkSize( const Type& row, size_t expectedSize ) const;
@@ -134,8 +135,8 @@ class DenseGeneralTest
    //**********************************************************************************************
 
    //**Type definitions****************************************************************************
-   using MT  = blaze::DynamicMatrix<int,blaze::rowMajor>;  //!< Row-major dynamic matrix type
-   using OMT = MT::OppositeType;                           //!< Column-major dynamic matrix type
+   using MT  = blaze::DynamicMatrix<int,blaze::rowMajor>;  //!< Row-major dynamic matrix type.
+   using OMT = MT::OppositeType;                           //!< Column-major dynamic matrix type.
    using RT  = blaze::Row<MT>;                             //!< Dense row type for row-major matrices.
    using ORT = blaze::Row<OMT>;                            //!< Dense row type for column-major matrices.
    //**********************************************************************************************

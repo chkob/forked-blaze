@@ -3,7 +3,7 @@
 //  \file blaze/math/views/submatrix/Dense.h
 //  \brief Submatrix specialization for dense matrices
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -68,6 +68,7 @@
 #include <blaze/math/traits/SchurTrait.h>
 #include <blaze/math/traits/SubmatrixTrait.h>
 #include <blaze/math/traits/SubTrait.h>
+#include <blaze/math/typetraits/HasMutableDataAccess.h>
 #include <blaze/math/typetraits/HasSIMDAdd.h>
 #include <blaze/math/typetraits/HasSIMDMult.h>
 #include <blaze/math/typetraits/HasSIMDSub.h>
@@ -111,7 +112,6 @@
 #include <blaze/util/TypeList.h>
 #include <blaze/util/Types.h>
 #include <blaze/util/typetraits/IsConst.h>
-#include <blaze/util/typetraits/IsNumeric.h>
 #include <blaze/util/typetraits/IsReference.h>
 #include <blaze/util/Unused.h>
 
@@ -166,10 +166,10 @@ class Submatrix<MT,unaligned,false,true,CSAs...>
    using Reference = If_< IsConst<MT>, ConstReference, Reference_<MT> >;
 
    //! Pointer to a constant submatrix value.
-   using ConstPointer = const ElementType*;
+   using ConstPointer = ConstPointer_<MT>;
 
    //! Pointer to a non-constant submatrix value.
-   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, ElementType* >;
+   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, Pointer_<MT> >;
    //**********************************************************************************************
 
    //**SubmatrixIterator class definition**********************************************************
@@ -309,6 +309,16 @@ class Submatrix<MT,unaligned,false,true,CSAs...>
       */
       inline ReferenceType operator*() const {
          return *iterator_;
+      }
+      //*******************************************************************************************
+
+      //**Element access operator******************************************************************
+      /*!\brief Direct access to the element at the current iterator position.
+      //
+      // \return Pointer to the element at the current iterator position.
+      */
+      inline IteratorType operator->() const {
+         return iterator_;
       }
       //*******************************************************************************************
 
@@ -652,12 +662,6 @@ class Submatrix<MT,unaligned,false,true,CSAs...>
    template< typename MT2, bool SO2 >
    inline EnableIf_< And< IsRestricted<MT>, RequiresEvaluation<MT2> >, Submatrix& >
       operator%=( const Matrix<MT2,SO2>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Submatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Submatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -669,14 +673,16 @@ class Submatrix<MT,unaligned,false,true,CSAs...>
    using DataType::rows;
    using DataType::columns;
 
-   inline Operand operand() const noexcept;
-   inline size_t  spacing() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  capacity( size_t i ) const noexcept;
-   inline size_t  nonZeros() const;
-   inline size_t  nonZeros( size_t i ) const;
-   inline void    reset();
-   inline void    reset( size_t i );
+   inline MT&       operand() noexcept;
+   inline const MT& operand() const noexcept;
+
+   inline size_t spacing() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t capacity( size_t i ) const noexcept;
+   inline size_t nonZeros() const;
+   inline size_t nonZeros( size_t i ) const;
+   inline void   reset();
+   inline void   reset( size_t i );
    //@}
    //**********************************************************************************************
 
@@ -855,7 +861,7 @@ class Submatrix<MT,unaligned,false,true,CSAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -1422,17 +1428,17 @@ inline Submatrix<MT,unaligned,false,true,CSAs...>&
       BLAZE_THROW_INVALID_ARGUMENT( "Invalid assignment to restricted matrix" );
    }
 
-   if( IsSparseMatrix<MT2>::value ) {
-      reset();
-   }
-
    decltype(auto) left( derestrict( *this ) );
 
    if( IsReference<Right>::value && right.canAlias( &matrix_ ) ) {
       const ResultType_<MT2> tmp( right );
+      if( IsSparseMatrix<MT2>::value )
+         reset();
       smpAssign( left, tmp );
    }
    else {
+      if( IsSparseMatrix<MT2>::value )
+         reset();
       smpAssign( left, right );
    }
 
@@ -1759,75 +1765,15 @@ inline EnableIf_< And< IsRestricted<MT>, RequiresEvaluation<MT2> >, Submatrix<MT
       BLAZE_THROW_INVALID_ARGUMENT( "Invalid assignment to restricted matrix" );
    }
 
+   decltype(auto) left( derestrict( *this ) );
+
    if( IsSparseMatrix<SchurType>::value ) {
       reset();
    }
 
-   decltype(auto) left( derestrict( *this ) );
-
    smpAssign( left, tmp );
 
    BLAZE_INTERNAL_ASSERT( isIntact( matrix_ ), "Invariant violation detected" );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a dense submatrix
-//        and a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the dense submatrix.
-//
-// This operator cannot be used for submatrices on lower or upper unitriangular matrices. The
-// attempt to scale such a submatrix results in a compilation error!
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CSAs >  // Compile time submatrix arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Submatrix<MT,unaligned,false,true,CSAs...> >&
-   Submatrix<MT,unaligned,false,true,CSAs...>::operator*=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) * rhs );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a dense submatrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the dense submatrix.
-//
-// This operator cannot be used for submatrices on lower or upper unitriangular matrices. The
-// attempt to scale such a submatrix results in a compilation error!
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CSAs >  // Compile time submatrix arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Submatrix<MT,unaligned,false,true,CSAs...> >&
-   Submatrix<MT,unaligned,false,true,CSAs...>::operator/=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) / rhs );
 
    return *this;
 }
@@ -1851,8 +1797,23 @@ inline EnableIf_< IsNumeric<Other>, Submatrix<MT,unaligned,false,true,CSAs...> >
 */
 template< typename MT       // Type of the dense matrix
         , size_t... CSAs >  // Compile time submatrix arguments
-inline typename Submatrix<MT,unaligned,false,true,CSAs...>::Operand
-   Submatrix<MT,unaligned,false,true,CSAs...>::operand() const noexcept
+inline MT& Submatrix<MT,unaligned,false,true,CSAs...>::operand() noexcept
+{
+   return matrix_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the matrix containing the submatrix.
+//
+// \return The matrix containing the submatrix.
+*/
+template< typename MT       // Type of the dense matrix
+        , size_t... CSAs >  // Compile time submatrix arguments
+inline const MT& Submatrix<MT,unaligned,false,true,CSAs...>::operand() const noexcept
 {
    return matrix_;
 }
@@ -2115,6 +2076,7 @@ inline Submatrix<MT,unaligned,false,true,CSAs...>&
 
    decltype(auto) left( derestrict( *this ) );
    const ResultType tmp( trans( *this ) );
+
    smpAssign( left, tmp );
 
    return *this;
@@ -2156,6 +2118,7 @@ inline Submatrix<MT,unaligned,false,true,CSAs...>&
 
    decltype(auto) left( derestrict( *this ) );
    const ResultType tmp( ctrans( *this ) );
+
    smpAssign( left, tmp );
 
    return *this;
@@ -3475,10 +3438,10 @@ class Submatrix<MT,unaligned,true,true,CSAs...>
    using Reference = If_< IsConst<MT>, ConstReference, Reference_<MT> >;
 
    //! Pointer to a constant submatrix value.
-   using ConstPointer = const ElementType*;
+   using ConstPointer = ConstPointer_<MT>;
 
    //! Pointer to a non-constant submatrix value.
-   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, ElementType* >;
+   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, Pointer_<MT> >;
    //**********************************************************************************************
 
    //**SubmatrixIterator class definition**********************************************************
@@ -3620,6 +3583,16 @@ class Submatrix<MT,unaligned,true,true,CSAs...>
       */
       inline ReferenceType operator*() const {
          return *iterator_;
+      }
+      //*******************************************************************************************
+
+      //**Element access operator******************************************************************
+      /*!\brief Direct access to the element at the current iterator position.
+      //
+      // \return Pointer to the element at the current iterator position.
+      */
+      inline IteratorType operator->() const {
+         return iterator_;
       }
       //*******************************************************************************************
 
@@ -3963,12 +3936,6 @@ class Submatrix<MT,unaligned,true,true,CSAs...>
    template< typename MT2, bool SO >
    inline EnableIf_< And< IsRestricted<MT>, RequiresEvaluation<MT2> >, Submatrix& >
       operator%=( const Matrix<MT2,SO>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Submatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Submatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -3980,14 +3947,16 @@ class Submatrix<MT,unaligned,true,true,CSAs...>
    using DataType::rows;
    using DataType::columns;
 
-   inline Operand operand() const noexcept;
-   inline size_t  spacing() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  capacity( size_t i ) const noexcept;
-   inline size_t  nonZeros() const;
-   inline size_t  nonZeros( size_t i ) const;
-   inline void    reset();
-   inline void    reset( size_t i );
+   inline MT&       operand() noexcept;
+   inline const MT& operand() const noexcept;
+
+   inline size_t spacing() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t capacity( size_t i ) const noexcept;
+   inline size_t nonZeros() const;
+   inline size_t nonZeros( size_t i ) const;
+   inline void   reset();
+   inline void   reset( size_t i );
    //@}
    //**********************************************************************************************
 
@@ -4166,7 +4135,7 @@ class Submatrix<MT,unaligned,true,true,CSAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -4712,17 +4681,17 @@ inline Submatrix<MT,unaligned,true,true,CSAs...>&
       BLAZE_THROW_INVALID_ARGUMENT( "Invalid assignment to restricted matrix" );
    }
 
-   if( IsSparseMatrix<MT2>::value ) {
-      reset();
-   }
-
    decltype(auto) left( derestrict( *this ) );
 
    if( IsReference<Right>::value && right.canAlias( &matrix_ ) ) {
       const ResultType_<MT2> tmp( right );
+      if( IsSparseMatrix<MT2>::value )
+         reset();
       smpAssign( left, tmp );
    }
    else {
+      if( IsSparseMatrix<MT2>::value )
+         reset();
       smpAssign( left, right );
    }
 
@@ -5049,75 +5018,15 @@ inline EnableIf_< And< IsRestricted<MT>, RequiresEvaluation<MT2> >, Submatrix<MT
       BLAZE_THROW_INVALID_ARGUMENT( "Invalid assignment to restricted matrix" );
    }
 
+   decltype(auto) left( derestrict( *this ) );
+
    if( IsSparseMatrix<SchurType>::value ) {
       reset();
    }
 
-   decltype(auto) left( derestrict( *this ) );
-
    smpAssign( left, tmp );
 
    BLAZE_INTERNAL_ASSERT( isIntact( matrix_ ), "Invariant violation detected" );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a dense submatrix
-//        and a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the dense submatrix.
-//
-// This operator cannot be used for submatrices on lower or upper unitriangular matrices. The
-// attempt to scale such a submatrix results in a compilation error!
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CSAs >  // Compile time submatrix arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Submatrix<MT,unaligned,true,true,CSAs...> >&
-   Submatrix<MT,unaligned,true,true,CSAs...>::operator*=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) * rhs );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a dense submatrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the dense submatrix.
-//
-// This operator cannot be used for submatrices on lower or upper unitriangular matrices. The
-// attempt to scale such a submatrix results in a compilation error!
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CSAs >  // Compile time submatrix arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Submatrix<MT,unaligned,true,true,CSAs...> >&
-   Submatrix<MT,unaligned,true,true,CSAs...>::operator/=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) / rhs );
 
    return *this;
 }
@@ -5141,8 +5050,23 @@ inline EnableIf_< IsNumeric<Other>, Submatrix<MT,unaligned,true,true,CSAs...> >&
 */
 template< typename MT       // Type of the dense matrix
         , size_t... CSAs >  // Compile time submatrix arguments
-inline typename Submatrix<MT,unaligned,true,true,CSAs...>::Operand
-   Submatrix<MT,unaligned,true,true,CSAs...>::operand() const noexcept
+inline MT& Submatrix<MT,unaligned,true,true,CSAs...>::operand() noexcept
+{
+   return matrix_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the matrix containing the submatrix.
+//
+// \return The matrix containing the submatrix.
+*/
+template< typename MT       // Type of the dense matrix
+        , size_t... CSAs >  // Compile time submatrix arguments
+inline const MT& Submatrix<MT,unaligned,true,true,CSAs...>::operand() const noexcept
 {
    return matrix_;
 }
@@ -5388,6 +5312,7 @@ inline Submatrix<MT,unaligned,true,true,CSAs...>&
 
    decltype(auto) left( derestrict( *this ) );
    const ResultType tmp( trans( *this ) );
+
    smpAssign( left, tmp );
 
    return *this;
@@ -5429,6 +5354,7 @@ inline Submatrix<MT,unaligned,true,true,CSAs...>&
 
    decltype(auto) left( derestrict( *this ) );
    const ResultType tmp( ctrans( *this ) );
+
    smpAssign( left, tmp );
 
    return *this;
@@ -6743,10 +6669,10 @@ class Submatrix<MT,aligned,false,true,CSAs...>
    using Reference = If_< IsConst<MT>, ConstReference, Reference_<MT> >;
 
    //! Pointer to a constant submatrix value.
-   using ConstPointer = const ElementType*;
+   using ConstPointer = ConstPointer_<MT>;
 
    //! Pointer to a non-constant submatrix value.
-   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, ElementType* >;
+   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, Pointer_<MT> >;
 
    //! Iterator over constant elements.
    using ConstIterator = ConstIterator_<MT>;
@@ -6829,12 +6755,6 @@ class Submatrix<MT,aligned,false,true,CSAs...>
    template< typename MT2, bool SO >
    inline EnableIf_< And< IsRestricted<MT>, RequiresEvaluation<MT2> >, Submatrix& >
       operator%=( const Matrix<MT2,SO>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Submatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Submatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -6846,14 +6766,16 @@ class Submatrix<MT,aligned,false,true,CSAs...>
    using DataType::rows;
    using DataType::columns;
 
-   inline Operand operand() const noexcept;
-   inline size_t  spacing() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  capacity( size_t i ) const noexcept;
-   inline size_t  nonZeros() const;
-   inline size_t  nonZeros( size_t i ) const;
-   inline void    reset();
-   inline void    reset( size_t i );
+   inline MT&       operand() noexcept;
+   inline const MT& operand() const noexcept;
+
+   inline size_t spacing() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t capacity( size_t i ) const noexcept;
+   inline size_t nonZeros() const;
+   inline size_t nonZeros( size_t i ) const;
+   inline void   reset();
+   inline void   reset( size_t i );
    //@}
    //**********************************************************************************************
 
@@ -7025,7 +6947,7 @@ class Submatrix<MT,aligned,false,true,CSAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -7597,17 +7519,17 @@ inline Submatrix<MT,aligned,false,true,CSAs...>&
       BLAZE_THROW_INVALID_ARGUMENT( "Invalid assignment to restricted matrix" );
    }
 
-   if( IsSparseMatrix<MT2>::value ) {
-      reset();
-   }
-
    decltype(auto) left( derestrict( *this ) );
 
    if( IsReference<Right>::value && right.canAlias( &matrix_ ) ) {
       const ResultType_<MT2> tmp( right );
+      if( IsSparseMatrix<MT2>::value )
+         reset();
       smpAssign( left, tmp );
    }
    else {
+      if( IsSparseMatrix<MT2>::value )
+         reset();
       smpAssign( left, right );
    }
 
@@ -7934,75 +7856,15 @@ inline EnableIf_< And< IsRestricted<MT>, RequiresEvaluation<MT2> >, Submatrix<MT
       BLAZE_THROW_INVALID_ARGUMENT( "Invalid assignment to restricted matrix" );
    }
 
+   decltype(auto) left( derestrict( *this ) );
+
    if( IsSparseMatrix<SchurType>::value ) {
       reset();
    }
 
-   decltype(auto) left( derestrict( *this ) );
-
    smpAssign( left, tmp );
 
    BLAZE_INTERNAL_ASSERT( isIntact( matrix_ ), "Invariant violation detected" );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a dense submatrix
-//        and a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the dense submatrix.
-//
-// This operator cannot be used for submatrices on lower or upper unitriangular matrices. The
-// attempt to scale such a submatrix results in a compilation error!
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CSAs >  // Compile time submatrix arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Submatrix<MT,aligned,false,true,CSAs...> >&
-   Submatrix<MT,aligned,false,true,CSAs...>::operator*=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) * rhs );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a dense submatrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the dense submatrix.
-//
-// This operator cannot be used for submatrices on lower or upper unitriangular matrices. The
-// attempt to scale such a submatrix results in a compilation error!
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CSAs >  // Compile time submatrix arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Submatrix<MT,aligned,false,true,CSAs...> >&
-   Submatrix<MT,aligned,false,true,CSAs...>::operator/=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) / rhs );
 
    return *this;
 }
@@ -8026,8 +7888,23 @@ inline EnableIf_< IsNumeric<Other>, Submatrix<MT,aligned,false,true,CSAs...> >&
 */
 template< typename MT       // Type of the dense matrix
         , size_t... CSAs >  // Compile time submatrix arguments
-inline typename Submatrix<MT,aligned,false,true,CSAs...>::Operand
-   Submatrix<MT,aligned,false,true,CSAs...>::operand() const noexcept
+inline MT& Submatrix<MT,aligned,false,true,CSAs...>::operand() noexcept
+{
+   return matrix_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the matrix containing the submatrix.
+//
+// \return The matrix containing the submatrix.
+*/
+template< typename MT       // Type of the dense matrix
+        , size_t... CSAs >  // Compile time submatrix arguments
+inline const MT& Submatrix<MT,aligned,false,true,CSAs...>::operand() const noexcept
 {
    return matrix_;
 }
@@ -8290,6 +8167,7 @@ inline Submatrix<MT,aligned,false,true,CSAs...>&
 
    decltype(auto) left( derestrict( *this ) );
    const ResultType tmp( trans( *this ) );
+
    smpAssign( left, tmp );
 
    return *this;
@@ -8331,6 +8209,7 @@ inline Submatrix<MT,aligned,false,true,CSAs...>&
 
    decltype(auto) left( derestrict( *this ) );
    const ResultType tmp( ctrans( *this ) );
+
    smpAssign( left, tmp );
 
    return *this;
@@ -9642,10 +9521,10 @@ class Submatrix<MT,aligned,true,true,CSAs...>
    using Reference = If_< IsConst<MT>, ConstReference, Reference_<MT> >;
 
    //! Pointer to a constant submatrix value.
-   using ConstPointer = const ElementType*;
+   using ConstPointer = ConstPointer_<MT>;
 
    //! Pointer to a non-constant submatrix value.
-   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, ElementType* >;
+   using Pointer = If_< Or< IsConst<MT>, Not< HasMutableDataAccess<MT> > >, ConstPointer, Pointer_<MT> >;
 
    //! Iterator over constant elements.
    using ConstIterator = ConstIterator_<MT>;
@@ -9728,12 +9607,6 @@ class Submatrix<MT,aligned,true,true,CSAs...>
    template< typename MT2, bool SO >
    inline EnableIf_< And< IsRestricted<MT>, RequiresEvaluation<MT2> >, Submatrix& >
       operator%=( const Matrix<MT2,SO>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Submatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Submatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -9745,14 +9618,16 @@ class Submatrix<MT,aligned,true,true,CSAs...>
    using DataType::rows;
    using DataType::columns;
 
-   inline Operand operand() const noexcept;
-   inline size_t  spacing() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  capacity( size_t i ) const noexcept;
-   inline size_t  nonZeros() const;
-   inline size_t  nonZeros( size_t i ) const;
-   inline void    reset();
-   inline void    reset( size_t i );
+   inline MT&       operand() noexcept;
+   inline const MT& operand() const noexcept;
+
+   inline size_t spacing() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t capacity( size_t i ) const noexcept;
+   inline size_t nonZeros() const;
+   inline size_t nonZeros( size_t i ) const;
+   inline void   reset();
+   inline void   reset( size_t i );
    //@}
    //**********************************************************************************************
 
@@ -9924,7 +9799,7 @@ class Submatrix<MT,aligned,true,true,CSAs...>
 
 //=================================================================================================
 //
-//  CONSTRUCTOR
+//  CONSTRUCTORS
 //
 //=================================================================================================
 
@@ -10476,17 +10351,17 @@ inline Submatrix<MT,aligned,true,true,CSAs...>&
       BLAZE_THROW_INVALID_ARGUMENT( "Invalid assignment to restricted matrix" );
    }
 
-   if( IsSparseMatrix<MT2>::value ) {
-      reset();
-   }
-
    decltype(auto) left( derestrict( *this ) );
 
    if( IsReference<Right>::value && right.canAlias( &matrix_ ) ) {
       const ResultType_<MT2> tmp( right );
+      if( IsSparseMatrix<MT2>::value )
+         reset();
       smpAssign( left, tmp );
    }
    else {
+      if( IsSparseMatrix<MT2>::value )
+         reset();
       smpAssign( left, right );
    }
 
@@ -10813,75 +10688,15 @@ inline EnableIf_< And< IsRestricted<MT>, RequiresEvaluation<MT2> >, Submatrix<MT
       BLAZE_THROW_INVALID_ARGUMENT( "Invalid assignment to restricted matrix" );
    }
 
+   decltype(auto) left( derestrict( *this ) );
+
    if( IsSparseMatrix<SchurType>::value ) {
       reset();
    }
 
-   decltype(auto) left( derestrict( *this ) );
-
    smpAssign( left, tmp );
 
    BLAZE_INTERNAL_ASSERT( isIntact( matrix_ ), "Invariant violation detected" );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a dense submatrix
-//        and a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the dense submatrix.
-//
-// This operator cannot be used for submatrices on lower or upper unitriangular matrices. The
-// attempt to scale such a submatrix results in a compilation error!
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CSAs >  // Compile time submatrix arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Submatrix<MT,aligned,true,true,CSAs...> >&
-   Submatrix<MT,aligned,true,true,CSAs...>::operator*=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) * rhs );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a dense submatrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the dense submatrix.
-//
-// This operator cannot be used for submatrices on lower or upper unitriangular matrices. The
-// attempt to scale such a submatrix results in a compilation error!
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename MT       // Type of the dense matrix
-        , size_t... CSAs >  // Compile time submatrix arguments
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, Submatrix<MT,aligned,true,true,CSAs...> >&
-   Submatrix<MT,aligned,true,true,CSAs...>::operator/=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   decltype(auto) left( derestrict( *this ) );
-   smpAssign( left, (*this) / rhs );
 
    return *this;
 }
@@ -10905,8 +10720,23 @@ inline EnableIf_< IsNumeric<Other>, Submatrix<MT,aligned,true,true,CSAs...> >&
 */
 template< typename MT       // Type of the dense matrix
         , size_t... CSAs >  // Compile time submatrix arguments
-inline typename Submatrix<MT,aligned,true,true,CSAs...>::Operand
-   Submatrix<MT,aligned,true,true,CSAs...>::operand() const noexcept
+inline MT& Submatrix<MT,aligned,true,true,CSAs...>::operand() noexcept
+{
+   return matrix_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the matrix containing the submatrix.
+//
+// \return The matrix containing the submatrix.
+*/
+template< typename MT       // Type of the dense matrix
+        , size_t... CSAs >  // Compile time submatrix arguments
+inline const MT& Submatrix<MT,aligned,true,true,CSAs...>::operand() const noexcept
 {
    return matrix_;
 }
@@ -11152,6 +10982,7 @@ inline Submatrix<MT,aligned,true,true,CSAs...>&
 
    decltype(auto) left( derestrict( *this ) );
    const ResultType tmp( trans( *this ) );
+
    smpAssign( left, tmp );
 
    return *this;
@@ -11193,6 +11024,7 @@ inline Submatrix<MT,aligned,true,true,CSAs...>&
 
    decltype(auto) left( derestrict( *this ) );
    const ResultType tmp( ctrans( *this ) );
+
    smpAssign( left, tmp );
 
    return *this;

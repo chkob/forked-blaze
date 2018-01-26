@@ -3,7 +3,7 @@
 //  \file blaze/math/sparse/IdentityMatrix.h
 //  \brief Implementation of an identity matrix
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -878,7 +878,9 @@ template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline void IdentityMatrix<Type,SO>::swap( IdentityMatrix& m ) noexcept
 {
-   std::swap( n_, m.n_ );
+   using std::swap;
+
+   swap( n_, m.n_ );
 }
 //*************************************************************************************************
 
@@ -959,7 +961,7 @@ inline typename IdentityMatrix<Type,SO>::ConstIterator
 // In case of a row-major matrix, this function returns a row iterator to the first element with
 // an index greater then the given column index. In case of a column-major matrix, the function
 // returns a column iterator to the first element with an index greater then the given row
-// index. In combination with the upperBound() function this function can be used to create a
+// index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices.
 */
 template< typename Type  // Data type of the matrix

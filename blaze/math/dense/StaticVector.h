@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/StaticVector.h
 //  \brief Header file for the implementation of a fixed-size vector
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -75,6 +75,7 @@
 #include <blaze/math/typetraits/HasSIMDSub.h>
 #include <blaze/math/typetraits/HighType.h>
 #include <blaze/math/typetraits/IsAligned.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsPadded.h>
 #include <blaze/math/typetraits/IsSIMDCombinable.h>
 #include <blaze/math/typetraits/IsSparseVector.h>
@@ -298,24 +299,18 @@ class StaticVector
    template< typename VT > inline StaticVector& operator*=( const Vector<VT,TF>& rhs );
    template< typename VT > inline StaticVector& operator/=( const DenseVector<VT,TF>& rhs );
    template< typename VT > inline StaticVector& operator%=( const Vector<VT,TF>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, StaticVector >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, StaticVector >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
    //**Utility functions***************************************************************************
    /*!\name Utility functions */
    //@{
-   inline constexpr size_t size() const noexcept;
-   inline constexpr size_t spacing() const noexcept;
-   inline constexpr size_t capacity() const noexcept;
-   inline size_t           nonZeros() const;
-   inline void             reset();
-   inline void             swap( StaticVector& v ) noexcept;
+   static inline constexpr size_t size() noexcept;
+   static inline constexpr size_t spacing() noexcept;
+   static inline constexpr size_t capacity() noexcept;
+          inline size_t           nonZeros() const;
+          inline void             reset();
+          inline void             swap( StaticVector& v ) noexcept;
    //@}
    //**********************************************************************************************
 
@@ -1363,60 +1358,6 @@ inline StaticVector<Type,N,TF>& StaticVector<Type,N,TF>::operator%=( const Vecto
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*!\brief Multiplication assignment operator for the multiplication between a vector and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the vector.
-*/
-template< typename Type     // Data type of the vector
-        , size_t N          // Number of elements
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, StaticVector<Type,N,TF> >&
-   StaticVector<Type,N,TF>::operator*=( Other rhs )
-{
-   using blaze::assign;
-
-   assign( *this, (*this) * rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Division assignment operator for the division of a vector by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the vector.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename Type     // Data type of the vector
-        , size_t N          // Number of elements
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, StaticVector<Type,N,TF> >&
-   StaticVector<Type,N,TF>::operator/=( Other rhs )
-{
-   using blaze::assign;
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   assign( *this, (*this) / rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -1433,7 +1374,7 @@ inline EnableIf_<IsNumeric<Other>, StaticVector<Type,N,TF> >&
 template< typename Type  // Data type of the vector
         , size_t N       // Number of elements
         , bool TF >      // Transpose flag
-inline constexpr size_t StaticVector<Type,N,TF>::size() const noexcept
+inline constexpr size_t StaticVector<Type,N,TF>::size() noexcept
 {
    return N;
 }
@@ -1451,7 +1392,7 @@ inline constexpr size_t StaticVector<Type,N,TF>::size() const noexcept
 template< typename Type  // Data type of the vector
         , size_t N       // Number of elements
         , bool TF >      // Transpose flag
-inline constexpr size_t StaticVector<Type,N,TF>::spacing() const noexcept
+inline constexpr size_t StaticVector<Type,N,TF>::spacing() noexcept
 {
    return NN;
 }
@@ -1466,7 +1407,7 @@ inline constexpr size_t StaticVector<Type,N,TF>::spacing() const noexcept
 template< typename Type  // Data type of the vector
         , size_t N       // Number of elements
         , bool TF >      // Transpose flag
-inline constexpr size_t StaticVector<Type,N,TF>::capacity() const noexcept
+inline constexpr size_t StaticVector<Type,N,TF>::capacity() noexcept
 {
    return NN;
 }
@@ -2760,6 +2701,24 @@ struct IsStatic< StaticVector<T,N,TF> >
 /*! \cond BLAZE_INTERNAL */
 template< typename T, size_t N, bool TF >
 struct IsAligned< StaticVector<T,N,TF> >
+   : public TrueType
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ISCONTIGUOUS SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename T, size_t N, bool TF >
+struct IsContiguous< StaticVector<T,N,TF> >
    : public TrueType
 {};
 /*! \endcond */

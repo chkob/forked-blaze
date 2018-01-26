@@ -3,7 +3,7 @@
 //  \file blaze/math/views/band/Sparse.h
 //  \brief Band specialization for sparse matrices
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -54,6 +54,7 @@
 #include <blaze/math/expressions/DenseVector.h>
 #include <blaze/math/expressions/SparseVector.h>
 #include <blaze/math/expressions/View.h>
+#include <blaze/math/RelaxationFlag.h>
 #include <blaze/math/shims/IsDefault.h>
 #include <blaze/math/sparse/SparseElement.h>
 #include <blaze/math/traits/AddTrait.h>
@@ -81,13 +82,11 @@
 #include <blaze/util/constraints/Pointer.h>
 #include <blaze/util/constraints/Reference.h>
 #include <blaze/util/DisableIf.h>
-#include <blaze/util/EnableIf.h>
 #include <blaze/util/mpl/If.h>
 #include <blaze/util/TypeList.h>
 #include <blaze/util/Types.h>
 #include <blaze/util/typetraits/IsConst.h>
 #include <blaze/util/typetraits/IsIntegral.h>
-#include <blaze/util/typetraits/IsNumeric.h>
 #include <blaze/util/Unused.h>
 
 
@@ -288,10 +287,10 @@ class Band<MT,TF,false,false,CBAs...>
       /*!\brief Default constructor of the BandIterator class.
       */
       inline BandIterator()
-         : matrix_( nullptr )  // The sparse matrix containing the band.
-         , row_   ( 0UL )      // The current row index.
-         , column_( 0UL )      // The current column index.
-         , pos_   ()           // Iterator to the current sparse element.
+         : matrix_( nullptr )  // The sparse matrix containing the band
+         , row_   ( 0UL )      // The current row index
+         , column_( 0UL )      // The current column index
+         , pos_   ()           // Iterator to the current sparse element
       {}
       //*******************************************************************************************
 
@@ -303,10 +302,10 @@ class Band<MT,TF,false,false,CBAs...>
       // \param columnIndex The initial column index.
       */
       inline BandIterator( MatrixType& matrix, size_t rowIndex, size_t columnIndex )
-         : matrix_( &matrix     )  // The sparse matrix containing the band.
-         , row_   ( rowIndex    )  // The current row index.
-         , column_( columnIndex )  // The current column index.
-         , pos_   ()               // Iterator to the current sparse element.
+         : matrix_( &matrix     )  // The sparse matrix containing the band
+         , row_   ( rowIndex    )  // The current row index
+         , column_( columnIndex )  // The current column index
+         , pos_   ()               // Iterator to the current sparse element
       {
          for( ; row_ < matrix_->rows() && column_ < matrix_->columns(); ++row_, ++column_ ) {
             pos_ = matrix_->find( row_, column_ );
@@ -325,10 +324,10 @@ class Band<MT,TF,false,false,CBAs...>
       // \param pos Initial position of the iterator
       */
       inline BandIterator( MatrixType& matrix, size_t rowIndex, size_t columnIndex, IteratorType pos )
-         : matrix_( &matrix     )  // The sparse matrix containing the band.
-         , row_   ( rowIndex    )  // The current row index.
-         , column_( columnIndex )  // The current column index.
-         , pos_   ( pos         )  // Iterator to the current sparse element.
+         : matrix_( &matrix     )  // The sparse matrix containing the band
+         , row_   ( rowIndex    )  // The current row index
+         , column_( columnIndex )  // The current column index
+         , pos_   ( pos         )  // Iterator to the current sparse element
       {
          BLAZE_INTERNAL_ASSERT( matrix.find( row_, column_ ) == pos, "Invalid initial iterator position" );
       }
@@ -341,10 +340,10 @@ class Band<MT,TF,false,false,CBAs...>
       */
       template< typename MatrixType2, typename IteratorType2 >
       inline BandIterator( const BandIterator<MatrixType2,IteratorType2>& it )
-         : matrix_( it.matrix_ )  // The sparse matrix containing the band.
-         , row_   ( it.row_    )  // The current row index.
-         , column_( it.column_ )  // The current column index.
-         , pos_   ( it.pos_    )  // Iterator to the current sparse element.
+         : matrix_( it.matrix_ )  // The sparse matrix containing the band
+         , row_   ( it.row_    )  // The current row index
+         , column_( it.column_ )  // The current column index
+         , pos_   ( it.pos_    )  // Iterator to the current sparse element
       {}
       //*******************************************************************************************
 
@@ -512,12 +511,6 @@ class Band<MT,TF,false,false,CBAs...>
    template< typename VT > inline Band& operator*=( const Vector<VT,TF>& rhs );
    template< typename VT > inline Band& operator/=( const DenseVector<VT,TF>&  rhs );
    template< typename VT > inline Band& operator%=( const Vector<VT,TF>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Band >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, Band >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -528,12 +521,14 @@ class Band<MT,TF,false,false,CBAs...>
    using DataType::row;
    using DataType::column;
 
-   inline Operand operand() const noexcept;
-   inline size_t  size() const noexcept;
-   inline size_t  capacity() const noexcept;
-   inline size_t  nonZeros() const;
-   inline void    reset();
-   inline void    reserve( size_t n );
+   inline MT&       operand() noexcept;
+   inline const MT& operand() const noexcept;
+
+   inline size_t size() const noexcept;
+   inline size_t capacity() const noexcept;
+   inline size_t nonZeros() const;
+   inline void   reset();
+   inline void   reserve( size_t n );
    //@}
    //**********************************************************************************************
 
@@ -928,6 +923,7 @@ inline Band<MT,TF,false,false,CBAs...>&
    }
 
    decltype(auto) left( derestrict( *this ) );
+
    assign( left, tmp );
 
    BLAZE_INTERNAL_ASSERT( isIntact( matrix_ ), "Invariant violation detected" );
@@ -1314,88 +1310,6 @@ inline Band<MT,TF,false,false,CBAs...>&
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a sparse band
-//        and a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the sparse band.
-//
-// Via this operator it is possible to scale the sparse band. Note however that the function is
-// subject to three restrictions. First, this operator cannot be used for bands on lower or upper
-// unitriangular matrices. The attempt to scale such a band results in a compilation error!
-// Second, this operator can only be used for numeric data types. And third, the elements of
-// the sparse band must support the multiplication assignment operator for the given scalar
-// built-in data type.
-*/
-template< typename MT          // Type of the sparse matrix
-        , bool TF              // Transpose flag
-        , ptrdiff_t... CBAs >  // Compile time band arguments
-template< typename Other >     // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, Band<MT,TF,false,false,CBAs...> >&
-   Band<MT,TF,false,false,CBAs...>::operator*=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   for( Iterator element=begin(); element!=end(); ++element )
-      element->value() *= rhs;
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a sparse band by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the sparse band.
-//
-// Via this operator it is possible to scale the sparse band. Note however that the function is
-// subject to three restrictions. First, this operator cannot be used for bands on lower or upper
-// unitriangular matrices. The attempt to scale such a band results in a compilation error!
-// Second, this operator can only be used for numeric data types. And third, the elements of
-// the sparse band must either support the multiplication assignment operator for the given
-// floating point data type or the division assignment operator for the given integral data
-// type.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename MT          // Type of the sparse matrix
-        , bool TF              // Transpose flag
-        , ptrdiff_t... CBAs >  // Compile time band arguments
-template< typename Other >     // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, Band<MT,TF,false,false,CBAs...> >&
-   Band<MT,TF,false,false,CBAs...>::operator/=( Other rhs )
-{
-   BLAZE_CONSTRAINT_MUST_NOT_BE_UNITRIANGULAR_MATRIX_TYPE( MT );
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   using DT  = DivTrait_<ElementType,Other>;
-   using Tmp = If_< IsNumeric<DT>, DT, Other >;
-
-   // Depending on the two involved data types, an integer division is applied or a
-   // floating point division is selected.
-   if( IsNumeric<DT>::value && IsFloatingPoint<DT>::value ) {
-      const Tmp tmp( Tmp(1)/static_cast<Tmp>( rhs ) );
-      for( Iterator element=begin(); element!=end(); ++element )
-         element->value() *= tmp;
-   }
-   else {
-      for( Iterator element=begin(); element!=end(); ++element )
-         element->value() /= rhs;
-   }
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -1413,8 +1327,24 @@ inline EnableIf_<IsNumeric<Other>, Band<MT,TF,false,false,CBAs...> >&
 template< typename MT          // Type of the sparse matrix
         , bool TF              // Transpose flag
         , ptrdiff_t... CBAs >  // Compile time band arguments
-inline typename Band<MT,TF,false,false,CBAs...>::Operand
-   Band<MT,TF,false,false,CBAs...>::operand() const noexcept
+inline MT& Band<MT,TF,false,false,CBAs...>::operand() noexcept
+{
+   return matrix_;
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Returns the matrix containing the band.
+//
+// \return The matrix containing the band.
+*/
+template< typename MT          // Type of the sparse matrix
+        , bool TF              // Transpose flag
+        , ptrdiff_t... CBAs >  // Compile time band arguments
+inline const MT& Band<MT,TF,false,false,CBAs...>::operand() const noexcept
 {
    return matrix_;
 }
@@ -1617,7 +1547,7 @@ template< typename MT          // Type of the sparse matrix
         , ptrdiff_t... CBAs >  // Compile time band arguments
 inline void Band<MT,TF,false,false,CBAs...>::append( size_t index, const ElementType& value, bool check )
 {
-   if( !check || !isDefault( value ) )
+   if( !check || !isDefault<strict>( value ) )
       matrix_.insert( row()+index, column()+index, value );
 }
 /*! \endcond */
@@ -1809,7 +1739,7 @@ inline void Band<MT,TF,false,false,CBAs...>::erase( Iterator first, Iterator las
 // found, the function returns an iterator to the element. Otherwise an iterator just past
 // the last non-zero element of the sparse band (the end() iterator) is returned. Note that
 // the returned sparse band iterator is subject to invalidation due to inserting operations
-// via the subscript operator or the insert() function!
+// via the subscript operator, the set() function or the insert() function!
 */
 template< typename MT          // Type of the sparse matrix
         , bool TF              // Transpose flag
@@ -1842,7 +1772,7 @@ inline typename Band<MT,TF,false,false,CBAs...>::Iterator
 // found, the function returns an iterator to the element. Otherwise an iterator just past
 // the last non-zero element of the sparse band (the end() iterator) is returned. Note that
 // the returned sparse band iterator is subject to invalidation due to inserting operations
-// via the subscript operator or the insert() function!
+// via the subscript operator, the set() function or the insert() function!
 */
 template< typename MT          // Type of the sparse matrix
         , bool TF              // Transpose flag
@@ -1873,8 +1803,8 @@ inline typename Band<MT,TF,false,false,CBAs...>::ConstIterator
 // This function returns an iterator to the first element with an index not less then the given
 // index. In combination with the upperBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse band iterator
-// is subject to invalidation due to inserting operations via the subscript operator or the
-// insert() function!
+// is subject to invalidation due to inserting operations via the subscript operator, the set()
+// function or the insert() function!
 */
 template< typename MT          // Type of the sparse matrix
         , bool TF              // Transpose flag
@@ -1908,8 +1838,8 @@ inline typename Band<MT,TF,false,false,CBAs...>::Iterator
 // This function returns an iterator to the first element with an index not less then the given
 // index. In combination with the upperBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse band iterator
-// is subject to invalidation due to inserting operations via the subscript operator or the
-// insert() function!
+// is subject to invalidation due to inserting operations via the subscript operator, the set()
+// function or the insert() function!
 */
 template< typename MT          // Type of the sparse matrix
         , bool TF              // Transpose flag
@@ -1941,10 +1871,10 @@ inline typename Band<MT,TF,false,false,CBAs...>::ConstIterator
 // \return Iterator to the first index greater then the given index, end() iterator otherwise.
 //
 // This function returns an iterator to the first element with an index greater then the given
-// index. In combination with the upperBound() function this function can be used to create a
+// index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse band iterator
-// is subject to invalidation due to inserting operations via the subscript operator or the
-// insert() function!
+// is subject to invalidation due to inserting operations via the subscript operator, the set()
+// function or the insert() function!
 */
 template< typename MT          // Type of the sparse matrix
         , bool TF              // Transpose flag
@@ -1976,10 +1906,10 @@ inline typename Band<MT,TF,false,false,CBAs...>::Iterator
 // \return Iterator to the first index greater then the given index, end() iterator otherwise.
 //
 // This function returns an iterator to the first element with an index greater then the given
-// index. In combination with the upperBound() function this function can be used to create a
+// index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse band iterator
-// is subject to invalidation due to inserting operations via the subscript operator or the
-// insert() function!
+// is subject to invalidation due to inserting operations via the subscript operator, the set()
+// function or the insert() function!
 */
 template< typename MT          // Type of the sparse matrix
         , bool TF              // Transpose flag
@@ -2384,7 +2314,7 @@ class Band<MT,TF,false,true,CBAs...>
    //
    // \return The matrix multiplication expression containing the band.
    */
-   inline MT operand() const noexcept {
+   inline const MT& operand() const noexcept {
       return matrix_;
    }
    //**********************************************************************************************
@@ -2482,7 +2412,7 @@ class Band<MT,TF,false,true,CBAs...>
 
       for( size_t i=0UL; i<n; ++i ) {
          tmp = row( A, rhs.row()+i, unchecked ) * column( B, rhs.column()+i, unchecked );
-         if( !isDefault( tmp ) ) {
+         if( !isDefault<strict>( tmp ) ) {
             if( (~lhs).capacity() <= nonzeros ) {
                (~lhs).reserve( min( max( 2UL*(~lhs).capacity(), 7UL ), (~lhs).size() ) );
             }

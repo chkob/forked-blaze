@@ -3,7 +3,7 @@
 //  \file blaze/math/views/Row.h
 //  \brief Header file for the implementation of the Row view
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -62,20 +62,18 @@
 #include <blaze/math/typetraits/HasConstDataAccess.h>
 #include <blaze/math/typetraits/HasMutableDataAccess.h>
 #include <blaze/math/typetraits/IsAligned.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsOpposedView.h>
 #include <blaze/math/typetraits/IsRowMajorMatrix.h>
-#include <blaze/math/typetraits/IsSubmatrix.h>
 #include <blaze/math/typetraits/IsSymmetric.h>
 #include <blaze/math/typetraits/Size.h>
 #include <blaze/math/views/Check.h>
 #include <blaze/math/views/row/BaseTemplate.h>
 #include <blaze/math/views/row/Dense.h>
 #include <blaze/math/views/row/Sparse.h>
-#include <blaze/util/DisableIf.h>
-#include <blaze/util/EnableIf.h>
+#include <blaze/util/Assert.h>
 #include <blaze/util/FunctionTrace.h>
 #include <blaze/util/mpl/And.h>
-#include <blaze/util/mpl/Not.h>
 #include <blaze/util/mpl/Or.h>
 #include <blaze/util/TrueType.h>
 #include <blaze/util/TypeList.h>
@@ -461,6 +459,7 @@ inline decltype(auto) row( const MatMatMultExpr<MT>& matrix, RRAs... args )
 // \param matrix The constant outer product.
 // \param args Optional row arguments.
 // \return View on the specified row of the outer product.
+// \exception std::invalid_argument Invalid row access index.
 //
 // This function returns an expression representing the specified row of the given outer product.
 */
@@ -494,6 +493,7 @@ inline decltype(auto) row( const VecTVecMultExpr<MT>& matrix, RRAs... args )
 // \param index The index of the row.
 // \param args Optional row arguments.
 // \return View on the specified row of the outer product.
+// \exception std::invalid_argument Invalid row access index.
 //
 // This function returns an expression representing the specified row of the given outer product.
 */
@@ -935,137 +935,6 @@ inline bool isIntact( const Row<MT,SO,DF,SF,CRAs...>& row ) noexcept
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
-/*!\brief Backend of the isSame() function for two regular rows.
-// \ingroup row
-//
-// \param a The first row to be tested for its state.
-// \param b The second row to be tested for its state.
-// \return \a true in case the two rows share a state, \a false otherwise.
-//
-// This backend implementation of the isSame() function handles the special case of two regular
-// rows. In case both rows represent the same observable state, the function returns \a true,
-// otherwise it returns \a false.
-*/
-template< typename MT1       // Type of the matrix of the left-hand side row
-        , bool SO            // Storage order
-        , bool DF            // Density flag
-        , bool SF1           // Symmetry flag of the left-hand side row
-        , size_t... CRAs1    // Compile time row arguments of the left-hand side row
-        , typename MT2       // Type of the matrix of the right-hand side row
-        , bool SF2           // Symmetry flag of the right-hand side row
-        , size_t... CRAs2 >  // Compile time row arguments of the right-hand side row
-inline DisableIf_< Or< IsSubmatrix<MT1>, IsSubmatrix<MT2> >, bool >
-   isSame_backend( const Row<MT1,SO,DF,SF1,CRAs1...>& a,
-                   const Row<MT2,SO,DF,SF2,CRAs2...>& b ) noexcept
-{
-   return ( isSame( a.operand(), b.operand() ) && ( a.row() == b.row() ) );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Backend of the isSame() function for the left row being a row on a submatrix.
-// \ingroup row
-//
-// \param a The first row to be tested for its state.
-// \param b The second row to be tested for its state.
-// \return \a true in case the two rows share a state, \a false otherwise.
-//
-// This backend implementation of the isSame() function handles the special case of the left row
-// being a row on a submatrix. In case both rows represent the same observable state, the function
-// returns \a true, otherwise it returns \a false.
-*/
-template< typename MT1       // Type of the submatrix of the left-hand side row
-        , bool SO            // Storage order
-        , bool DF            // Density flag
-        , bool SF1           // Symmetry flag of the left-hand side row
-        , size_t... CRAs1    // Compile time row arguments of the left-hand side row
-        , typename MT2       // Type of the matrix of the right-hand side row
-        , bool SF2           // Symmetry flag of the right-hand side row
-        , size_t... CRAs2 >  // Compile time row arguments of the right-hand side row
-inline EnableIf_< And< IsSubmatrix<MT1>, Not< IsSubmatrix<MT2> > >, bool >
-   isSame_backend( const Row<MT1,SO,DF,SF1,CRAs1...>& a,
-                   const Row<MT2,SO,DF,SF2,CRAs2...>& b ) noexcept
-{
-   return ( isSame( a.operand().operand(), b.operand() ) &&
-            ( a.size() == b.size() ) &&
-            ( a.row() + a.operand().row() == b.row() ) );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Backend of the isSame() function for the right row being a row on a submatrix.
-// \ingroup row
-//
-// \param a The first row to be tested for its state.
-// \param b The second row to be tested for its state.
-// \return \a true in case the two rows share a state, \a false otherwise.
-//
-// This backend implementation of the isSame() function handles the special case of the right row
-// being a row on a submatrix. In case both rows represent the same observable state, the function
-// returns \a true, otherwise it returns \a false.
-*/
-template< typename MT1       // Type of the matrix of the left-hand side row
-        , bool SO            // Storage order
-        , bool DF            // Density flag
-        , bool SF1           // Symmetry flag of the left-hand side row
-        , size_t... CRAs1    // Compile time row arguments of the left-hand side row
-        , typename MT2       // Type of the submatrix of the right-hand side row
-        , bool SF2           // Symmetry flag of the right-hand side row
-        , size_t... CRAs2 >  // Compile time row arguments of the right-hand side row
-inline EnableIf_< And< Not< IsSubmatrix<MT1> >, IsSubmatrix<MT2> >, bool >
-   isSame_backend( const Row<MT1,SO,DF,SF1,CRAs1...>& a,
-                   const Row<MT2,SO,DF,SF2,CRAs2...>& b ) noexcept
-{
-   return ( isSame( a.operand(), b.operand().operand() ) &&
-            ( a.size() == b.size() ) &&
-            ( a.row() == b.row() + b.operand().row() ) );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Backend of the isSame() function for two rows on submatrices.
-// \ingroup row
-//
-// \param a The first row to be tested for its state.
-// \param b The second row to be tested for its state.
-// \return \a true in case the two rows share a state, \a false otherwise.
-//
-// This backend implementation of the isSame() function handles the special case of both rows
-// being rows on submatrices. In case both rows represent the same observable state, the function
-// returns \a true, otherwise it returns \a false.
-*/
-template< typename MT1       // Type of the submatrix of the left-hand side row
-        , bool SO            // Storage order
-        , bool DF            // Density flag
-        , bool SF1           // Symmetry flag of the left-hand side row
-        , size_t... CRAs1    // Compile time row arguments of the left-hand side row
-        , typename MT2       // Type of the submatrix of the right-hand side row
-        , bool SF2           // Symmetry flag of the right-hand side row
-        , size_t... CRAs2 >  // Compile time row arguments of the right-hand side row
-inline EnableIf_< And< IsSubmatrix<MT1>, IsSubmatrix<MT2> >, bool >
-   isSame_backend( const Row<MT1,SO,DF,SF1,CRAs1...>& a,
-                   const Row<MT2,SO,DF,SF2,CRAs2...>& b ) noexcept
-{
-   return ( isSame( a.operand().operand(), b.operand().operand() ) &&
-            ( a.size() == b.size() ) &&
-            ( a.row() + a.operand().row() == b.row() + b.operand().row() ) &&
-            ( a.operand().column() == b.operand().column() ) );
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
 /*!\brief Returns whether the two given rows represent the same observable state.
 // \ingroup row
 //
@@ -1088,7 +957,7 @@ template< typename MT1       // Type of the matrix of the left-hand side row
 inline bool isSame( const Row<MT1,SO,DF,SF1,CRAs1...>& a,
                     const Row<MT2,SO,DF,SF2,CRAs2...>& b ) noexcept
 {
-   return isSame_backend( a, b );
+   return ( isSame( a.operand(), b.operand() ) && ( a.row() == b.row() ) );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1101,8 +970,8 @@ inline bool isSame( const Row<MT1,SO,DF,SF1,CRAs1...>& a,
 //
 // \param row The target row.
 // \param index The index of the element to be set.
-// \param value The value of the element to be set.
-// \return \a true in case the set operation would be successful, \a false if not.
+// \param value The value to be set to the element.
+// \return \a true in case the operation would be successful, \a false if not.
 //
 // This function must \b NOT be called explicitly! It is used internally for the performance
 // optimized evaluation of expression templates. Calling this function explicitly might result
@@ -1117,9 +986,201 @@ template< typename MT     // Type of the matrix
         , typename ET >   // Type of the element
 inline bool trySet( const Row<MT,SO,DF,SF,CRAs...>& row, size_t index, const ET& value )
 {
-   BLAZE_INTERNAL_ASSERT( index <= row.size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index < row.size(), "Invalid vector access index" );
 
    return trySet( row.operand(), row.row(), index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by adding to a single element of a row.
+// \ingroup row
+//
+// \param row The target row.
+// \param index The index of the element to be modified.
+// \param value The value to be added to the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CRAs  // Compile time row arguments
+        , typename ET >   // Type of the element
+inline bool tryAdd( const Row<MT,SO,DF,SF,CRAs...>& row, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < row.size(), "Invalid vector access index" );
+
+   return tryAdd( row.operand(), row.row(), index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by subtracting from a single element of a row.
+// \ingroup row
+//
+// \param row The target row.
+// \param index The index of the element to be modified.
+// \param value The value to be subtracted from the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CRAs  // Compile time row arguments
+        , typename ET >   // Type of the element
+inline bool trySub( const Row<MT,SO,DF,SF,CRAs...>& row, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < row.size(), "Invalid vector access index" );
+
+   return trySub( row.operand(), row.row(), index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a row.
+// \ingroup row
+//
+// \param row The target row.
+// \param index The index of the element to be modified.
+// \param value The factor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CRAs  // Compile time row arguments
+        , typename ET >   // Type of the element
+inline bool tryMult( const Row<MT,SO,DF,SF,CRAs...>& row, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < row.size(), "Invalid vector access index" );
+
+   return tryMult( row.operand(), row.row(), index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a row.
+// \ingroup row
+//
+// \param row The target row.
+// \param index The index of the first element of the range to be modified.
+// \param size The number of elements of the range to be modified.
+// \param value The factor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CRAs  // Compile time row arguments
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryMult( const Row<MT,SO,DF,SF,CRAs...>& row, size_t index, size_t size, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index <= (~row).size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index + size <= (~row).size(), "Invalid range size" );
+
+   return tryMult( row.operand(), row.row(), index, 1UL, size, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a single element of a row.
+// \ingroup row
+//
+// \param row The target row.
+// \param index The index of the element to be modified.
+// \param value The divisor for the element.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CRAs  // Compile time row arguments
+        , typename ET >   // Type of the element
+inline bool tryDiv( const Row<MT,SO,DF,SF,CRAs...>& row, size_t index, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index < row.size(), "Invalid vector access index" );
+
+   return tryDiv( row.operand(), row.row(), index, value );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Predict invariant violations by scaling a range of elements of a row.
+// \ingroup row
+//
+// \param row The target row.
+// \param index The index of the first element of the range to be modified.
+// \param size The number of elements of the range to be modified.
+// \param value The divisor for the elements.
+// \return \a true in case the operation would be successful, \a false if not.
+//
+// This function must \b NOT be called explicitly! It is used internally for the performance
+// optimized evaluation of expression templates. Calling this function explicitly might result
+// in erroneous results and/or in compilation errors. Instead of using this function use the
+// assignment operator.
+*/
+template< typename MT     // Type of the matrix
+        , bool SO         // Storage order
+        , bool DF         // Density flag
+        , bool SF         // Symmetry flag
+        , size_t... CRAs  // Compile time row arguments
+        , typename ET >  // Type of the element
+BLAZE_ALWAYS_INLINE bool
+   tryDiv( const Row<MT,SO,DF,SF,CRAs...>& row, size_t index, size_t size, const ET& value )
+{
+   BLAZE_INTERNAL_ASSERT( index <= (~row).size(), "Invalid vector access index" );
+   BLAZE_INTERNAL_ASSERT( index + size <= (~row).size(), "Invalid range size" );
+
+   return tryDiv( row.operand(), row.row(), index, 1UL, size, value );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -1150,7 +1211,7 @@ inline bool tryAssign( const Row<MT,SO,DF,SF,CRAs...>& lhs,
                        const Vector<VT,true>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryAssign( lhs.operand(), ~rhs, lhs.row(), index );
 }
@@ -1183,7 +1244,7 @@ inline bool tryAddAssign( const Row<MT,SO,DF,SF,CRAs...>& lhs,
                           const Vector<VT,true>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryAddAssign( lhs.operand(), ~rhs, lhs.row(), index );
 }
@@ -1216,7 +1277,7 @@ inline bool trySubAssign( const Row<MT,SO,DF,SF,CRAs...>& lhs,
                           const Vector<VT,true>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return trySubAssign( lhs.operand(), ~rhs, lhs.row(), index );
 }
@@ -1249,7 +1310,7 @@ inline bool tryMultAssign( const Row<MT,SO,DF,SF,CRAs...>& lhs,
                            const Vector<VT,true>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryMultAssign( lhs.operand(), ~rhs, lhs.row(), index );
 }
@@ -1282,7 +1343,7 @@ inline bool tryDivAssign( const Row<MT,SO,DF,SF,CRAs...>& lhs,
                           const Vector<VT,true>& rhs, size_t index )
 {
    BLAZE_INTERNAL_ASSERT( index <= lhs.size(), "Invalid vector access index" );
-   BLAZE_INTERNAL_ASSERT( (~rhs).size() <= lhs.size() - index, "Invalid vector size" );
+   BLAZE_INTERNAL_ASSERT( index + (~rhs).size() <= lhs.size(), "Invalid vector size" );
 
    return tryDivAssign( lhs.operand(), ~rhs, lhs.row(), index );
 }
@@ -1485,6 +1546,24 @@ struct HasMutableDataAccess< Row<MT,SO,true,SF,CRAs...> >
 template< typename MT, bool SO, bool SF, size_t... CRAs >
 struct IsAligned< Row<MT,SO,true,SF,CRAs...> >
    : public And< IsAligned<MT>, Or< IsRowMajorMatrix<MT>, IsSymmetric<MT> > >
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ISCONTIGUOUS SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename MT, bool SF, size_t... CRAs >
+struct IsContiguous< Row<MT,true,true,SF,CRAs...> >
+   : public IsContiguous<MT>
 {};
 /*! \endcond */
 //*************************************************************************************************

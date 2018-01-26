@@ -3,7 +3,7 @@
 //  \file blaze/math/views/band/BaseTemplate.h
 //  \brief Header file for the implementation of the Band base template
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -55,6 +55,10 @@ namespace blaze {
 //=================================================================================================
 
 //*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Base template of the Band class template.
+// \ingroup band
+*/
 template< typename MT                            // Type of the matrix
         , bool TF = defaultTransposeFlag         // Transpose flag
         , bool DF = IsDenseMatrix<MT>::value     // Density flag
@@ -62,6 +66,7 @@ template< typename MT                            // Type of the matrix
         , ptrdiff_t... CBAs >                    // Compile time band arguments
 class Band
 {};
+/*! \endcond */
 //*************************************************************************************************
 
 

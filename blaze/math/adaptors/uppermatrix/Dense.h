@@ -3,7 +3,7 @@
 //  \file blaze/math/adaptors/uppermatrix/Dense.h
 //  \brief UpperMatrix specialization for dense matrices
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -63,6 +63,7 @@
 #include <blaze/math/InitializerList.h>
 #include <blaze/math/shims/Clear.h>
 #include <blaze/math/shims/IsDefault.h>
+#include <blaze/math/shims/IsZero.h>
 #include <blaze/math/typetraits/IsComputation.h>
 #include <blaze/math/typetraits/IsResizable.h>
 #include <blaze/math/typetraits/IsSquare.h>
@@ -713,11 +714,11 @@ class UpperMatrix<MT,SO,true>
    template< typename MT2, bool SO2 >
    inline UpperMatrix& operator%=( const Matrix<MT2,SO2>& rhs );
 
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, UpperMatrix >& operator*=( Other rhs );
+   template< typename ST >
+   inline EnableIf_< IsNumeric<ST>, UpperMatrix >& operator*=( ST rhs );
 
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, UpperMatrix >& operator/=( Other rhs );
+   template< typename ST >
+   inline EnableIf_< IsNumeric<ST>, UpperMatrix >& operator/=( ST rhs );
    //@}
    //**********************************************************************************************
 
@@ -1950,11 +1951,11 @@ inline UpperMatrix<MT,SO,true>&
 // \param rhs The right-hand side scalar value for the multiplication.
 // \return Reference to the matrix.
 */
-template< typename MT       // Type of the adapted dense matrix
-        , bool SO >         // Storage order of the adapted dense matrix
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, UpperMatrix<MT,SO,true> >&
-   UpperMatrix<MT,SO,true>::operator*=( Other rhs )
+template< typename MT    // Type of the adapted dense matrix
+        , bool SO >      // Storage order of the adapted dense matrix
+template< typename ST >  // Data type of the right-hand side scalar
+inline EnableIf_< IsNumeric<ST>, UpperMatrix<MT,SO,true> >&
+   UpperMatrix<MT,SO,true>::operator*=( ST rhs )
 {
    matrix_ *= rhs;
    return *this;
@@ -1970,13 +1971,13 @@ inline EnableIf_< IsNumeric<Other>, UpperMatrix<MT,SO,true> >&
 // \param rhs The right-hand side scalar value for the division.
 // \return Reference to the matrix.
 */
-template< typename MT       // Type of the adapted dense matrix
-        , bool SO >         // Storage order of the adapted dense matrix
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, UpperMatrix<MT,SO,true> >&
-   UpperMatrix<MT,SO,true>::operator/=( Other rhs )
+template< typename MT    // Type of the adapted dense matrix
+        , bool SO >      // Storage order of the adapted dense matrix
+template< typename ST >  // Data type of the right-hand side scalar
+inline EnableIf_< IsNumeric<ST>, UpperMatrix<MT,SO,true> >&
+   UpperMatrix<MT,SO,true>::operator/=( ST rhs )
 {
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
+   BLAZE_USER_ASSERT( !isZero( rhs ), "Division by zero detected" );
 
    matrix_ /= rhs;
    return *this;

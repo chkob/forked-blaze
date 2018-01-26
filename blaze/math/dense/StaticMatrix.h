@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/StaticMatrix.h
 //  \brief Header file for the implementation of a fixed-size matrix
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -80,6 +80,7 @@
 #include <blaze/math/typetraits/HasSIMDSub.h>
 #include <blaze/math/typetraits/HighType.h>
 #include <blaze/math/typetraits/IsAligned.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsDiagonal.h>
 #include <blaze/math/typetraits/IsLower.h>
 #include <blaze/math/typetraits/IsColumnMajorMatrix.h>
@@ -334,28 +335,22 @@ class StaticMatrix
    template< typename MT   , bool SO2 > inline StaticMatrix& operator+=( const Matrix<MT,SO2>& rhs );
    template< typename MT   , bool SO2 > inline StaticMatrix& operator-=( const Matrix<MT,SO2>& rhs );
    template< typename MT   , bool SO2 > inline StaticMatrix& operator%=( const Matrix<MT,SO2>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, StaticMatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, StaticMatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
    //**Utility functions***************************************************************************
    /*!\name Utility functions */
    //@{
-   inline constexpr size_t rows() const noexcept;
-   inline constexpr size_t columns() const noexcept;
-   inline constexpr size_t spacing() const noexcept;
-   inline constexpr size_t capacity() const noexcept;
-   inline           size_t capacity( size_t i ) const noexcept;
-   inline size_t           nonZeros() const;
-   inline size_t           nonZeros( size_t i ) const;
-   inline void             reset();
-   inline void             reset( size_t i );
-   inline void             swap( StaticMatrix& m ) noexcept;
+   static inline constexpr size_t rows() noexcept;
+   static inline constexpr size_t columns() noexcept;
+   static inline constexpr size_t spacing() noexcept;
+   static inline constexpr size_t capacity() noexcept;
+          inline           size_t capacity( size_t i ) const noexcept;
+          inline size_t           nonZeros() const;
+          inline size_t           nonZeros( size_t i ) const;
+          inline void             reset();
+          inline void             reset( size_t i );
+          inline void             swap( StaticMatrix& m ) noexcept;
    //@}
    //**********************************************************************************************
 
@@ -1547,62 +1542,6 @@ inline StaticMatrix<Type,M,N,SO>& StaticMatrix<Type,M,N,SO>::operator%=( const M
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*!\brief Multiplication assignment operator for the multiplication between a matrix and
-//        a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , size_t M          // Number of rows
-        , size_t N          // Number of columns
-        , bool SO >         // Storage order
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, StaticMatrix<Type,M,N,SO> >&
-   StaticMatrix<Type,M,N,SO>::operator*=( Other rhs )
-{
-   using blaze::assign;
-
-   assign( *this, (*this) * rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Division assignment operator for the division of a matrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the matrix.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename Type     // Data type of the matrix
-        , size_t M          // Number of rows
-        , size_t N          // Number of columns
-        , bool SO >         // Storage order
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, StaticMatrix<Type,M,N,SO> >&
-   StaticMatrix<Type,M,N,SO>::operator/=( Other rhs )
-{
-   using blaze::assign;
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   assign( *this, (*this) / rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -1620,7 +1559,7 @@ template< typename Type  // Data type of the matrix
         , size_t M       // Number of rows
         , size_t N       // Number of columns
         , bool SO >      // Storage order
-inline constexpr size_t StaticMatrix<Type,M,N,SO>::rows() const noexcept
+inline constexpr size_t StaticMatrix<Type,M,N,SO>::rows() noexcept
 {
    return M;
 }
@@ -1636,7 +1575,7 @@ template< typename Type  // Data type of the matrix
         , size_t M       // Number of rows
         , size_t N       // Number of columns
         , bool SO >      // Storage order
-inline constexpr size_t StaticMatrix<Type,M,N,SO>::columns() const noexcept
+inline constexpr size_t StaticMatrix<Type,M,N,SO>::columns() noexcept
 {
    return N;
 }
@@ -1655,7 +1594,7 @@ template< typename Type  // Data type of the matrix
         , size_t M       // Number of rows
         , size_t N       // Number of columns
         , bool SO >      // Storage order
-inline constexpr size_t StaticMatrix<Type,M,N,SO>::spacing() const noexcept
+inline constexpr size_t StaticMatrix<Type,M,N,SO>::spacing() noexcept
 {
    return NN;
 }
@@ -1671,7 +1610,7 @@ template< typename Type  // Data type of the matrix
         , size_t M       // Number of rows
         , size_t N       // Number of columns
         , bool SO >      // Storage order
-inline constexpr size_t StaticMatrix<Type,M,N,SO>::capacity() const noexcept
+inline constexpr size_t StaticMatrix<Type,M,N,SO>::capacity() noexcept
 {
    return M*NN;
 }
@@ -3273,27 +3212,21 @@ class StaticMatrix<Type,M,N,true>
    template< typename MT   , bool SO > inline StaticMatrix& operator+=( const Matrix<MT,SO>& rhs );
    template< typename MT   , bool SO > inline StaticMatrix& operator-=( const Matrix<MT,SO>& rhs );
    template< typename MT   , bool SO > inline StaticMatrix& operator%=( const Matrix<MT,SO>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, StaticMatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, StaticMatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
    //**Utility functions***************************************************************************
    /*!\name Utility functions */
    //@{
-   inline constexpr size_t rows() const noexcept;
-   inline constexpr size_t columns() const noexcept;
-   inline constexpr size_t spacing() const noexcept;
-   inline constexpr size_t capacity() const noexcept;
-   inline           size_t capacity( size_t j ) const noexcept;
-   inline size_t           nonZeros() const;
-   inline size_t           nonZeros( size_t j ) const;
-   inline void             reset();
-   inline void             reset( size_t i );
+   static inline constexpr size_t rows() noexcept;
+   static inline constexpr size_t columns() noexcept;
+   static inline constexpr size_t spacing() noexcept;
+   static inline constexpr size_t capacity() noexcept;
+          inline           size_t capacity( size_t j ) const noexcept;
+          inline size_t           nonZeros() const;
+          inline size_t           nonZeros( size_t j ) const;
+          inline void             reset();
+          inline void             reset( size_t i );
    inline void             swap( StaticMatrix& m ) noexcept;
    //@}
    //**********************************************************************************************
@@ -3654,7 +3587,7 @@ inline StaticMatrix<Type,M,N,true>::StaticMatrix( size_t m, size_t n, const Othe
 
    if( IsNumeric<Type>::value ) {
       for( size_t j=n; j<N; ++j ) {
-         for( size_t i=0UL; i<M; ++i )
+         for( size_t i=0UL; i<MM; ++i )
             v_[i+j*MM] = Type();
       }
    }
@@ -4493,64 +4426,6 @@ inline StaticMatrix<Type,M,N,true>& StaticMatrix<Type,M,N,true>::operator%=( con
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a matrix and
-//        a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , size_t M          // Number of rows
-        , size_t N >        // Number of columns
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, StaticMatrix<Type,M,N,true> >&
-   StaticMatrix<Type,M,N,true>::operator*=( Other rhs )
-{
-   using blaze::assign;
-
-   assign( *this, (*this) * rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a matrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the matrix.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename Type     // Data type of the matrix
-        , size_t M          // Number of rows
-        , size_t N >        // Number of columns
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, StaticMatrix<Type,M,N,true> >&
-   StaticMatrix<Type,M,N,true>::operator/=( Other rhs )
-{
-   using blaze::assign;
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   assign( *this, (*this) / rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -4568,7 +4443,7 @@ inline EnableIf_<IsNumeric<Other>, StaticMatrix<Type,M,N,true> >&
 template< typename Type  // Data type of the matrix
         , size_t M       // Number of rows
         , size_t N >     // Number of columns
-inline constexpr size_t StaticMatrix<Type,M,N,true>::rows() const noexcept
+inline constexpr size_t StaticMatrix<Type,M,N,true>::rows() noexcept
 {
    return M;
 }
@@ -4585,7 +4460,7 @@ inline constexpr size_t StaticMatrix<Type,M,N,true>::rows() const noexcept
 template< typename Type  // Data type of the matrix
         , size_t M       // Number of rows
         , size_t N >     // Number of columns
-inline constexpr size_t StaticMatrix<Type,M,N,true>::columns() const noexcept
+inline constexpr size_t StaticMatrix<Type,M,N,true>::columns() noexcept
 {
    return N;
 }
@@ -4605,7 +4480,7 @@ inline constexpr size_t StaticMatrix<Type,M,N,true>::columns() const noexcept
 template< typename Type  // Data type of the matrix
         , size_t M       // Number of rows
         , size_t N >     // Number of columns
-inline constexpr size_t StaticMatrix<Type,M,N,true>::spacing() const noexcept
+inline constexpr size_t StaticMatrix<Type,M,N,true>::spacing() noexcept
 {
    return MM;
 }
@@ -4622,7 +4497,7 @@ inline constexpr size_t StaticMatrix<Type,M,N,true>::spacing() const noexcept
 template< typename Type  // Data type of the matrix
         , size_t M       // Number of rows
         , size_t N >     // Number of columns
-inline constexpr size_t StaticMatrix<Type,M,N,true>::capacity() const noexcept
+inline constexpr size_t StaticMatrix<Type,M,N,true>::capacity() noexcept
 {
    return MM*N;
 }
@@ -6409,6 +6284,24 @@ struct IsStatic< StaticMatrix<T,M,N,SO> >
 template< typename T, size_t M, size_t N, bool SO >
 struct IsAligned< StaticMatrix<T,M,N,SO> >
    : public BoolConstant<usePadding>
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ISCONTIGUOUS SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename T, size_t M, size_t N, bool SO >
+struct IsContiguous< StaticMatrix<T,M,N,SO> >
+   : public TrueType
 {};
 /*! \endcond */
 //*************************************************************************************************

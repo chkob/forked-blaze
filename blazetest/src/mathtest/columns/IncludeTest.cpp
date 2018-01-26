@@ -1,9 +1,9 @@
 //=================================================================================================
 /*!
-//  \file blaze/math/shims/Square.h
-//  \brief Header file for the square shim
+//  \file src/mathtest/columns/IncludeTest.cpp
+//  \brief Source file for the Columns include test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -32,44 +32,23 @@
 */
 //=================================================================================================
 
-#ifndef _BLAZE_MATH_SHIMS_SQUARE_H_
-#define _BLAZE_MATH_SHIMS_SQUARE_H_
-
 
 //*************************************************************************************************
 // Includes
 //*************************************************************************************************
 
-#include <blaze/math/traits/MultExprTrait.h>
-#include <blaze/system/Inline.h>
+#include <blaze/math/Columns.h>
 
 
-namespace blaze {
+
 
 //=================================================================================================
 //
-//  SQUARE SHIM
+//  MAIN FUNCTION
 //
 //=================================================================================================
 
 //*************************************************************************************************
-/*!\brief Squaring the given value/object.
-// \ingroup math_shims
-//
-// \param a The value/object to be squared.
-// \return The result of the square operation.
-//
-// The \a sq shim represents an abstract interface for squaring a value/object of any given
-// data type. For values of built-in data type this results in a plain multiplication.
-*/
-template< typename T >
-BLAZE_ALWAYS_INLINE constexpr MultExprTrait_<T,T> sq( const T& a )
-   noexcept( noexcept( a * a ) )
-{
-   return a * a;
-}
+int main()
+{}
 //*************************************************************************************************
-
-} // namespace blaze
-
-#endif

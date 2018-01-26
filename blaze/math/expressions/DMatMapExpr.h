@@ -3,7 +3,7 @@
 //  \file blaze/math/expressions/DMatMapExpr.h
 //  \brief Header file for the dense matrix map expression
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -54,6 +54,7 @@
 #include <blaze/math/Functors.h>
 #include <blaze/math/shims/Serial.h>
 #include <blaze/math/SIMD.h>
+#include <blaze/math/traits/MultTrait.h>
 #include <blaze/math/traits/UnaryMapTrait.h>
 #include <blaze/math/typetraits/IsAligned.h>
 #include <blaze/math/typetraits/IsExpression.h>
@@ -68,6 +69,7 @@
 #include <blaze/math/typetraits/IsUpper.h>
 #include <blaze/math/typetraits/RequiresEvaluation.h>
 #include <blaze/math/typetraits/Size.h>
+#include <blaze/math/typetraits/UnderlyingBuiltin.h>
 #include <blaze/math/typetraits/UnderlyingNumeric.h>
 #include <blaze/system/Inline.h>
 #include <blaze/util/Assert.h>
@@ -1586,7 +1588,7 @@ inline decltype(auto) clamp( const DenseMatrix<MT,SO>& dm, const DT& min, const 
 // \ingroup dense_matrix
 //
 // \param dm The input matrix.
-// \param exp The exponent.
+// \param exp The scalar exponent.
 // \return The exponential value of each single element of \a dm.
 //
 // The \a pow() function computes the exponential value for each element of the input matrix
@@ -1601,14 +1603,15 @@ inline decltype(auto) clamp( const DenseMatrix<MT,SO>& dm, const DT& min, const 
 */
 template< typename MT  // Type of the dense matrix
         , bool SO      // Storage order
-        , typename ET  // Type of the exponent
-        , typename = EnableIf_< IsNumeric<ET> > >
-inline decltype(auto) pow( const DenseMatrix<MT,SO>& dm, ET exp )
+        , typename ST  // Type of the scalar exponent
+        , typename = EnableIf_< IsNumeric<ST> > >
+inline decltype(auto) pow( const DenseMatrix<MT,SO>& dm, ST exp )
 {
    BLAZE_FUNCTION_TRACE;
 
-   using ReturnType = const DMatMapExpr<MT,UnaryPow<ET>,SO>;
-   return ReturnType( ~dm, UnaryPow<ET>( exp ) );
+   using ScalarType = MultTrait_< UnderlyingBuiltin_<MT>, ST >;
+   using ReturnType = const DMatMapExpr<MT,UnaryPow<ScalarType>,SO>;
+   return ReturnType( ~dm, UnaryPow<ScalarType>( exp ) );
 }
 //*************************************************************************************************
 

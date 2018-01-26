@@ -3,7 +3,7 @@
 //  \file blaze/Tutorial.h
 //  \brief Tutorial of the Blaze library
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -81,9 +81,12 @@
 //    <li> \ref views
 //       <ul>
 //          <li> \ref views_subvectors </li>
+//          <li> \ref views_element_selections </li>
 //          <li> \ref views_submatrices </li>
 //          <li> \ref views_rows </li>
+//          <li> \ref views_row_selections </li>
 //          <li> \ref views_columns </li>
+//          <li> \ref views_column_selections </li>
 //          <li> \ref views_bands </li>
 //       </ul>
 //    </li>
@@ -149,6 +152,9 @@
 
 //**Configuration and Installation*****************************************************************
 /*!\page configuration_and_installation Configuration and Installation
+//
+// \tableofcontents
+//
 //
 // Since \b Blaze is a header-only library, setting up the \b Blaze library on a particular system
 // is a fairly easy two step process. In the following, this two step process is explained in
@@ -287,6 +293,20 @@
 // For an overview of other customization options and more details, please see the section
 // \ref configuration_files.
 //
+//
+// \n \section blaze_version Blaze Version
+// <hr>
+//
+// The current major and minor version number of the \b Blaze library can be found in the
+// <b><tt><blaze/system/Version.h></tt></b> header file. It is automatically included via the
+// <b><tt><blaze/Blaze.h></tt></b> header file. The file contains the two following macros,
+// which can for instance be used for conditional compilation:
+
+   \code
+   #define BLAZE_MAJOR_VERSION 3
+   #define BLAZE_MINOR_VERSION 2
+   \endcode
+
 // \n Next: \ref getting_started
 */
 //*************************************************************************************************
@@ -1168,6 +1188,8 @@
 // \n \section vector_operations_element_access Element Access
 // <hr>
 //
+// \n \subsection vector_operations_subscript_operator_1 Subscript Operator
+//
 // The easiest and most intuitive way to access a dense or sparse vector is via the subscript
 // operator. The indices to access a vector are zero-based:
 
@@ -1196,8 +1218,12 @@
    \endcode
 
 // Although the compressed vector is only used for read access within the for loop, using the
-// subscript operator temporarily inserts 10 non-zero elements into the vector. Therefore, all
-// vectors (sparse as well as dense) offer an alternate way via the \c begin(), \c cbegin(),
+// subscript operator temporarily inserts 10 non-zero elements into the vector. Therefore the
+// preferred way to traverse the non-zero elements of a sparse vector is to use iterators.
+//
+// \n \subsection vector_operations_iterators Iterators
+//
+// All vectors (sparse as well as dense) offer an alternate way via the \c begin(), \c cbegin(),
 // \c end(), and \c cend() functions to traverse the currently contained elements by iterators.
 // In case of non-const vectors, \c begin() and \c end() return an \c Iterator, which allows a
 // manipulation of the non-zero value, in case of a constant vector or in case \c cbegin() or
@@ -1244,8 +1270,11 @@
 //
 // In contrast to dense vectors, that store all elements independent of their value and that
 // offer direct access to all elements, spares vectors only store the non-zero elements contained
-// in the vector. Therefore it is necessary to explicitly add elements to the vector. The first
-// option to add elements to a sparse vector is the subscript operator:
+// in the vector. Therefore it is necessary to explicitly add elements to the vector.
+//
+// \n \subsection vector_operations_subscript_operator_2 Subscript Operator
+//
+// The first option to add elements to a sparse vector is the subscript operator:
 
    \code
    using blaze::CompressedVector;
@@ -1256,17 +1285,22 @@
 
 // In case the element at the given index is not yet contained in the vector, it is automatically
 // inserted. Otherwise the old value is replaced by the new value 2. The operator returns a
-// reference to the sparse vector element.\n
-// An alternative is the \c set() function: In case the element is not yet contained in the vector
-// the element is inserted, else the element's value is modified:
+// reference to the sparse vector element.
+//
+// \n \subsection vector_operations_set .set()
+//
+// An alternative to the subscript operator is the \c set() function: In case the element is not
+// yet contained in the vector the element is inserted, else the element's value is modified:
 
    \code
    // Insert or modify the value at index 3
    v1.set( 3, 1 );
    \endcode
 
-// However, insertion of elements can be better controlled via the \c insert() function. In contrast
-// to the subscript operator and the \c set() function it emits an exception in case the element is
+// \n \subsection vector_operations_insert .insert()
+//
+// The insertion of elements can be better controlled via the \c insert() function. In contrast to
+// the subscript operator and the \c set() function it emits an exception in case the element is
 // already contained in the vector. In order to check for this case, the \c find() function can be
 // used:
 
@@ -1277,6 +1311,8 @@
       v1.insert( 4, 6 );
    \endcode
 
+// \n \subsection vector_operations_append .append()
+//
 // Although the \c insert() function is very flexible, due to performance reasons it is not suited
 // for the setup of large sparse vectors. A very efficient, yet also very low-level way to fill
 // a sparse vector is the \c append() function. It requires the sparse vector to provide enough
@@ -1285,10 +1321,120 @@
 // behavior!
 
    \code
-   v1.reserve( 10 );     // Reserving space for 10 non-zero elements
+   v1.reserve( 10 );    // Reserving space for 10 non-zero elements
    v1.append( 5, -2 );  // Appending the element -2 at index 5
    v1.append( 6,  4 );  // Appending the element 4 at index 6
    // ...
+   \endcode
+
+// \n \section vector_operations_element_removal Element Removal
+// <hr>
+//
+// \subsection vector_operations_erase .erase()
+//
+// The \c erase() member functions can be used to remove elements from a sparse vector. The
+// following example gives an impression of the five different flavors of \c erase():
+
+   \code
+   using blaze::CompressedVector;
+
+   CompressedVector<int> v( 42 );
+   // ... Initialization of the vector
+
+   // Erasing the element at index 21
+   v.erase( 21 );
+
+   // Erasing a single element via iterator
+   v.erase( v.find( 4 ) );
+
+   // Erasing all non-zero elements in the range [7..24]
+   v.erase( v.lowerBound( 7 ), v.upperBound( 24 ) );
+
+   // Erasing all non-zero elements with a value larger than 9 by passing a unary predicate
+   v.erase( []( int i ){ return i > 9; } );
+
+   // Erasing all non-zero elements in the range [30..40] with a value larger than 5
+   v.erase( v.lowerBound( 30 ), v.upperBound( 40 ), []( int i ){ return i > 5; } );
+   \endcode
+
+// \n \section vector_operations_element_lookup Element Lookup
+// <hr>
+//
+// A sparse vector only stores the non-zero elements contained in the vector. Therefore, whenever
+// accessing a vector element at a specific index a lookup operation is required. Whereas the
+// subscript operator is performing this lookup automatically, it is also possible to use the
+// \c find(), \c lowerBound(), and \c upperBound() member functions for a manual lookup.
+//
+// \n \subsection vector_operations_find .find()
+//
+// The \c find() function can be used to check whether a specific element is contained in a sparse
+// vector. It specifically searches for the element at the given index. In case the element is
+// found, the function returns an iterator to the element. Otherwise an iterator just past the
+// last non-zero element of the compressed vector (the \c end() iterator) is returned. Note that
+// the returned iterator is subject to invalidation due to inserting operations via the subscript
+// operator, the \c set() function or the \c insert() function!
+
+   \code
+   using blaze::CompressedVector;
+
+   CompressedVector<int> a( 42 );
+   // ... Initialization of the vector
+
+   // Searching the element at index 7. In case the element is not
+   // contained in the vector, the end() iterator is returned.
+   CompressedVector<int>::Iterator pos( a.find( 7 ) );
+
+   if( pos != a.end( 7 ) ) {
+      // ...
+   }
+   \endcode
+
+// \n \subsection vector_operations_lowerbound .lowerBound()
+//
+// The \c lowerBound() function returns an iterator to the first element with an index not less
+// then the given index. In combination with the \c upperBound() function this function can be
+// used to create a pair of iterators specifying a range of indices. Note that the returned
+// iterator is subject to invalidation due to inserting operations via the subscript operator,
+// the \c set() function or the \c insert() function!
+
+   \code
+   using blaze::CompressedVector;
+
+   CompressedVector<int> a( 42 );
+   // ... Initialization of the vector
+
+   // Searching the lower bound of index 17.
+   CompressedVector<int>::Iterator pos1( A.lowerBound( 17 ) );
+
+   // Searching the upper bound of index 28
+   CompressedVector<int>::Iterator pos2( A.upperBound( 28 ) );
+
+   // Erasing all elements in the specified range
+   a.erase( pos1, pos2 );
+   \endcode
+
+// \n \subsection vector_operations_upperbound .upperBound()
+//
+// The \c upperBound() function returns an iterator to the first element with an index greater then
+// the given index. In combination with the \c lowerBound() function this function can be used to
+// create a pair of iterators specifying a range of indices. Note that the returned iterator is
+// subject to invalidation due to inserting operations via the subscript operator, the \c set()
+// function or the \c insert() function!
+
+   \code
+   using blaze::CompressedVector;
+
+   CompressedVector<int> a( 42 );
+   // ... Initialization of the vector
+
+   // Searching the lower bound of index 17.
+   CompressedVector<int>::Iterator pos1( A.lowerBound( 17 ) );
+
+   // Searching the upper bound of index 28
+   CompressedVector<int>::Iterator pos2( A.upperBound( 28 ) );
+
+   // Erasing all elements in the specified range
+   a.erase( pos1, pos2 );
    \endcode
 
 // \n \section vector_operations_non_modifying_operations Non-Modifying Operations
@@ -1408,10 +1554,10 @@
 // A vector is in default state if it appears to just have been default constructed. All resizable
 // vectors (\c HybridVector, \c DynamicVector, or \c CompressedVector) and \c CustomVector are
 // in default state if its size is equal to zero. A non-resizable vector (\c StaticVector, all
-// subvectors, rows, and columns) is in default state if all its elements are in default state.
-// For instance, in case the vector is instantiated for a built-in integral or floating point data
-// type, the function returns \c true in case all vector elements are 0 and \c false in case any
-// vector element is not 0.
+// subvectors, element selections, rows, and columns) is in default state if all its elements are
+// in default state. For instance, in case the vector is instantiated for a built-in integral or
+// floating point data type, the function returns \c true in case all vector elements are 0 and
+// \c false in case any vector element is not 0.
 //
 //
 // \n \subsection vector_operations_isUniform isUniform()
@@ -1845,6 +1991,17 @@
 // Note that in case of sparse vectors only the non-zero elements are taken into account!
 //
 //
+// \n \subsection vector_operations_hypot hypot()
+//
+// The \c hypot() function can be used to compute the componentwise hypotenous for a pair of
+// dense vectors:
+
+   \code
+   blaze::StaticVector<double,3UL> a, b, c;
+
+   c = hypot( a, b );  // Computes the componentwise hypotenuous
+   \endcode
+
 // \n \subsection vector_operations_clamp clamp()
 //
 // The \c clamp() function can be used to restrict all elements of a vector to a specific range:
@@ -2006,6 +2163,79 @@
 // releases of \b Blaze.
 //
 //
+// \n \section vector_operations_norms Norms
+//
+// \n \subsection vector_operations_norms_norm norm()
+//
+// The \c norm() function computes the L2 norm of the given dense or sparse vector:
+
+   \code
+   blaze::DynamicVector<double> a;
+   // ... Resizing and initialization
+   const double l2 = norm( a );
+   \endcode
+
+// \n \subsection vector_operations_norms_sqrnorm sqrNorm()
+//
+// The \c sqrNorm() function computes the squared L2 norm of the given dense or sparse vector:
+
+   \code
+   blaze::DynamicVector<double> a;
+   // ... Resizing and initialization
+   const double l2 = sqrNorm( a );
+   \endcode
+
+// \n \subsection vector_operations_norms_l1norm l1Norm()
+//
+// The \c l1Norm() function computes the squared L1 norm of the given dense or sparse vector:
+
+   \code
+   blaze::DynamicVector<double> a;
+   // ... Resizing and initialization
+   const double l1 = l1Norm( a );
+   \endcode
+
+// \n \subsection vector_operations_norms_l2norm l2Norm()
+//
+// The \c l2Norm() function computes the squared L2 norm of the given dense or sparse vector:
+
+   \code
+   blaze::DynamicVector<double> a;
+   // ... Resizing and initialization
+   const double l2 = l2Norm( a );
+   \endcode
+
+// \n \subsection vector_operations_norms_l3norm l3Norm()
+//
+// The \c l3Norm() function computes the squared L3 norm of the given dense or sparse vector:
+
+   \code
+   blaze::DynamicVector<double> a;
+   // ... Resizing and initialization
+   const double l3 = l3Norm( a );
+   \endcode
+
+// \n \subsection vector_operations_norms_lpnorm lpNorm()
+//
+// The \c lpNorm() function computes the general Lp norm of the given dense or sparse vector,
+// where the norm is specified by the runtime argument \a p:
+
+   \code
+   blaze::DynamicVector<double> a;
+   // ... Resizing and initialization
+   const double lp = lpNorm( a, 2.3 );
+   \endcode
+
+// \n \subsection vector_operations_norms_maxnorm maxNorm()
+//
+// The \c maxNorm() function computes the maximum norm of the given dense or sparse vector:
+
+   \code
+   blaze::DynamicVector<double> a;
+   // ... Resizing and initialization
+   const double max = maxNorm( a );
+   \endcode
+
 // \n Previous: \ref vector_types &nbsp; &nbsp; Next: \ref matrices
 */
 //*************************************************************************************************
@@ -2800,6 +3030,8 @@
 // \n \section matrix_operations_element_access Element Access
 // <hr>
 //
+// \n \subsection matrix_operations_function_call_operator_1 Function Call Operator
+//
 // The easiest way to access a specific dense or sparse matrix element is via the function call
 // operator. The indices to access a matrix are zero-based:
 
@@ -2832,8 +3064,12 @@
    \endcode
 
 // Although the compressed matrix is only used for read access within the for loop, using the
-// function call operator temporarily inserts 16 non-zero elements into the matrix. Therefore,
-// all matrices (sparse as well as dense) offer an alternate way via the \c begin(), \c cbegin(),
+// function call operator temporarily inserts 16 non-zero elements into the matrix. Therefore
+// the preferred way to traverse the non-zero elements of a sparse matrix is to use iterators.
+//
+// \n \subsection matrix_operations_iterators Iterators
+//
+// All matrices (sparse as well as dense) offer an alternate way via the \c begin(), \c cbegin(),
 // \c end() and \c cend() functions to traverse all contained elements by iterator. Note that
 // it is not possible to traverse all elements of the matrix, but that it is only possible to
 // traverse elements in a row/column-wise fashion. In case of a non-const matrix, \c begin() and
@@ -2887,8 +3123,11 @@
 //
 // Whereas a dense matrix always provides enough capacity to store all matrix elements, a sparse
 // matrix only stores the non-zero elements. Therefore it is necessary to explicitly add elements
-// to the matrix. The first possibility to add elements to a sparse matrix is the function call
-// operator:
+// to the matrix.
+//
+// \n \subsection matrix_operations_function_call_operator_2 Function Call Operator
+//
+// The first possibility to add elements to a sparse matrix is the function call operator:
 
    \code
    using blaze::CompressedMatrix;
@@ -2899,18 +3138,23 @@
 
 // In case the element at the given position is not yet contained in the sparse matrix, it is
 // automatically inserted. Otherwise the old value is replaced by the new value 2. The operator
-// returns a reference to the sparse vector element.\n
-// An alternative is the \c set() function: In case the element is not yet contained in the matrix
-// the element is inserted, else the element's value is modified:
+// returns a reference to the sparse vector element.
+//
+// \n \subsection matrix_operations_set .set()
+//
+// An alternative to the function call operator is the \c set() function: In case the element is
+// not yet contained in the matrix the element is inserted, else the element's value is modified:
 
    \code
    // Insert or modify the value at position (2,0)
    M1.set( 2, 0, 1 );
    \endcode
 
-// However, insertion of elements can be better controlled via the \c insert() function. In
-// contrast to the function call operator and the \c set() function it emits an exception in case
-// the element is already contained in the matrix. In order to check for this case, the \c find()
+// \n \subsection matrix_operations_insert .insert()
+
+// The insertion of elements can be better controlled via the \c insert() function. In contrast
+// to the function call operator and the \c set() function it emits an exception in case the
+// element is already contained in the matrix. In order to check for this case, the \c find()
 // function can be used:
 
    \code
@@ -2920,6 +3164,8 @@
       M1.insert( 2, 3, 4 );
    \endcode
 
+// \n \subsection matrix_operations_append .append()
+//
 // Although the \c insert() function is very flexible, due to performance reasons it is not
 // suited for the setup of large sparse matrices. A very efficient, yet also very low-level
 // way to fill a sparse matrix is the \c append() function. It requires the sparse matrix to
@@ -2960,6 +3206,122 @@
 // returned by the \c end() functions!
 //
 //
+// \n \section matrix_operations_element_removal Element Removal
+// <hr>
+//
+// \subsection matrix_operations_erase .erase()
+//
+// The \c erase() member functions can be used to remove elements from a sparse matrix. The
+// following example gives an impression of the five different flavors of \c erase():
+
+   \code
+   using blaze::CompressedMatrix;
+
+   CompressedMatrix<int,rowMajor> A( 42, 53 );
+   // ... Initialization of the matrix
+
+   // Erasing the element at position (21,23)
+   A.erase( 21, 23 );
+
+   // Erasing a single element in row 17 via iterator
+   A.erase( 17, A.find( 4 ) );
+
+   // Erasing all non-zero elements in the range [7..24] of row 33
+   A.erase( 33, A.lowerBound( 33, 7 ), A.upperBound( 33, 24 ) );
+
+   // Erasing all non-zero elements with a value larger than 9 by passing a unary predicate
+   A.erase( []( int i ){ return i > 9; } );
+
+   // Erasing all non-zero elements in the range [30..40] of row 37 with a value larger than 5
+   CompressedMatrix<int,rowMajor>::Iterator pos1( A.lowerBound( 37, 30 ) );
+   CompressedMatrix<int,rowMajor>::Iterator pos2( A.upperBound( 37, 40 ) );
+   A.erase( 37, pos1, pos2, []( int i ){ return i > 5; } );
+   \endcode
+
+// \n \section matrix_operations_element_lookup Element Lookup
+// <hr>
+//
+// A sparse matrix only stores the non-zero elements contained in the matrix. Therefore, whenever
+// accessing a matrix element at a specific position a lookup operation is required. Whereas the
+// function call operator is performing this lookup automatically, it is also possible to use the
+// \c find(), \c lowerBound(), and \c upperBound() member functions for a manual lookup.
+//
+// \n \subsection matrix_operations_find .find()
+//
+// The \c find() function can be used to check whether a specific element is contained in the
+// sparse matrix. It specifically searches for the element at the specified position. In case
+// the element is found, the function returns an iterator to the element. Otherwise an iterator
+// just past the last non-zero element of the according row or column (the \c end() iterator)
+// is returned. Note that the returned iterator is subject to invalidation due to inserting
+// operations via the function call operator, the \c set() function or the \c insert() function!
+
+   \code
+   using blaze::CompressedMatrix;
+
+   CompressedMatrix<int,rowMajor> A( 42, 53 );
+   // ... Initialization of the matrix
+
+   // Searching the element at position (7,17). In case the element is not
+   // contained in the vector, the end() iterator of row 7 is returned.
+   CompressedMatrix<int,rowMajor>::Iterator pos( A.find( 7, 17 ) );
+
+   if( pos != A.end( 7 ) ) {
+      // ...
+   }
+   \endcode
+
+// \n \subsection matrix_operations_lowerbound .lowerBound()
+//
+// In case of a row-major matrix, this function returns a row iterator to the first element with
+// an index not less then the given column index. In case of a column-major matrix, the function
+// returns a column iterator to the first element with an index not less then the given row
+// index. In combination with the \c upperBound() function this function can be used to create a
+// pair of iterators specifying a range of indices. Note that the returned iterator is subject
+// to invalidation due to inserting operations via the function call operator, the \c set()
+// function or the \c insert() function!
+
+   \code
+   using blaze::CompressedMatrix;
+
+   CompressedMatrix<int,rowMajor> A( 42, 53 );
+   // ... Initialization of the matrix
+
+   // Searching the lower bound of column index 17 in row 7.
+   CompressedMatrix<int,rowMajor>::Iterator pos1( A.lowerBound( 7, 17 ) );
+
+   // Searching the upper bound of column index 28 in row 7
+   CompressedMatrix<int,rowMajor>::Iterator pos2( A.upperBound( 7, 28 ) );
+
+   // Erasing all elements in the specified range
+   A.erase( 7, pos1, pos2 );
+   \endcode
+
+// \n \subsection matrix_operations_upperbound .upperBound()
+//
+// In case of a row-major matrix, this function returns a row iterator to the first element with
+// an index greater then the given column index. In case of a column-major matrix, the function
+// returns a column iterator to the first element with an index greater then the given row
+// index. In combination with the \c lowerBound() function this function can be used to create a
+// pair of iterators specifying a range of indices. Note that the returned iterator is subject
+// to invalidation due to inserting operations via the function call operator, the \c set()
+// function or the \c insert() function!
+
+   \code
+   using blaze::CompressedMatrix;
+
+   CompressedMatrix<int,columnMajor> A( 42, 53 );
+   // ... Initialization of the matrix
+
+   // Searching the lower bound of row index 17 in column 9.
+   CompressedMatrix<int,columnMajor>::Iterator pos1( A.lowerBound( 17, 9 ) );
+
+   // Searching the upper bound of row index 28 in column 9
+   CompressedMatrix<int,columnMajor>::Iterator pos2( A.upperBound( 28, 9 ) );
+
+   // Erasing all elements in the specified range
+   A.erase( 9, pos1, pos2 );
+   \endcode
+
 // \n \section matrix_operations_non_modifying_operations Non-Modifying Operations
 // <hr>
 //
@@ -3749,6 +4111,17 @@
 // Note that in case of sparse matrices only the non-zero elements are taken into account!
 //
 //
+// \n \subsection matrix_operations_hypot hypot()
+//
+// The \c hypot() function can be used to compute the componentwise hypotenous for a pair of
+// dense matrices:
+
+   \code
+   blaze::StaticMatrix<double,3UL,3UL> A, B, C;
+
+   C = hypot( A, B );  // Computes the componentwise hypotenuous
+   \endcode
+
 // \n \subsection matrix_operators_clamp clamp()
 //
 // The \c clamp() function can be used to restrict all elements of a matrix to a specific range:
@@ -3905,6 +4278,79 @@
 // releases of \b Blaze.
 //
 //
+// \n \section matrix_operations_norms Norms
+//
+// \n \subsection matrix_operations_norms_norm norm()
+//
+// The \c norm() function computes the L2 norm of the given dense or sparse matrix:
+
+   \code
+   blaze::DynamicMatrix<double> A;
+   // ... Resizing and initialization
+   const double l2 = norm( A );
+   \endcode
+
+// \n \subsection matrix_operations_norms_sqrnorm sqrNorm()
+//
+// The \c sqrNorm() function computes the squared L2 norm of the given dense or sparse matrix:
+
+   \code
+   blaze::DynamicMatrix<double> A;
+   // ... Resizing and initialization
+   const double l2 = sqrNorm( A );
+   \endcode
+
+// \n \subsection matrix_operations_norms_l1norm l1Norm()
+//
+// The \c l1Norm() function computes the squared L1 norm of the given dense or sparse matrix:
+
+   \code
+   blaze::DynamicMatrix<double> A;
+   // ... Resizing and initialization
+   const double l1 = l1Norm( A );
+   \endcode
+
+// \n \subsection matrix_operations_norms_l2norm l2Norm()
+//
+// The \c l2Norm() function computes the squared L2 norm of the given dense or sparse matrix:
+
+   \code
+   blaze::DynamicMatrix<double> A;
+   // ... Resizing and initialization
+   const double l2 = l2Norm( A );
+   \endcode
+
+// \n \subsection matrix_operations_norms_l3norm l3Norm()
+//
+// The \c l3Norm() function computes the squared L3 norm of the given dense or sparse matrix:
+
+   \code
+   blaze::DynamicMatrix<double> A;
+   // ... Resizing and initialization
+   const double l3 = l3Norm( A );
+   \endcode
+
+// \n \subsection matrix_operations_norms_lpnorm lpNorm()
+//
+// The \c lpNorm() function computes the general Lp norm of the given dense or sparse matrix,
+// where the norm is specified by the runtime argument \a p:
+
+   \code
+   blaze::DynamicMatrix<double> A;
+   // ... Resizing and initialization
+   const double lp = lpNorm( A, 2.3 );
+   \endcode
+
+// \n \subsection matrix_operations_norms_maxnorm maxNorm()
+//
+// The \c maxNorm() function computes the maximum norm of the given dense or sparse matrix:
+
+   \code
+   blaze::DynamicMatrix<double> A;
+   // ... Resizing and initialization
+   const double max = maxNorm( A );
+   \endcode
+
 // \n \section matrix_operations_declaration_operations Declaration Operations
 // <hr>
 //
@@ -6875,11 +7321,14 @@
 //
 // Vector views:
 //  - \ref views_subvectors
+//  - \ref views_element_selections
 //
 // Matrix views:
 //  - \ref views_submatrices
 //  - \ref views_rows
+//  - \ref views_row_selections
 //  - \ref views_columns
+//  - \ref views_column_selections
 //  - \ref views_bands
 //
 //
@@ -7262,7 +7711,299 @@
    auto sv2 = subvector<aligned,8UL,16UL>( x );
    \endcode
 
-// \n Previous: \ref views &nbsp; &nbsp; Next: \ref views_submatrices
+// \n Previous: \ref views &nbsp; &nbsp; Next: \ref views_element_selections
+*/
+//*************************************************************************************************
+
+
+//**Element Selections*****************************************************************************
+/*!\page views_element_selections Element Selections
+//
+// \tableofcontents
+//
+//
+// Element selections provide views on arbitrary compositions of elements of dense and sparse
+// vectors. These views act as a reference to the selected elements and represent them as another
+// dense or sparse vector. This reference is valid and can be used in every way any other dense
+// or sparse vector can be used as long as the vector containing the elements is not resized or
+// entirely destroyed. The element selection also acts as an alias to the vector elements in the
+// specified range: Changes made to the elements (e.g. modifying values, inserting or erasing
+// elements) are immediately visible in the vector and changes made via the vector are immediately
+// visible in the elements.
+//
+//
+// \n \section views_element_selections_setup Setup of Element Selections
+//
+// An element selection can be created very conveniently via the \c elements() function. It can
+// be included via the header file
+
+   \code
+   #include <blaze/math/Elements.h>
+   \endcode
+
+// The indices of the elements to be selected can be specified either at compile time or at runtime
+// (by means of an initializer list, array or vector):
+
+   \code
+   blaze::DynamicVector<double,blaze::rowVector> x;
+   // ... Resizing and initialization
+
+   // Selecting the elements 4, 6, 8, and 10 (compile time arguments)
+   auto e1 = elements<4UL,6UL,8UL,10UL>( x );
+
+   // Selecting the elements 3, 2, and 1 (runtime arguments via an initializer list)
+   const std::initializer_list<size_t> list{ 3UL, 2UL, 1UL };
+   auto e2 = elements( x, { 3UL, 2UL, 1UL } );
+   auto e3 = elements( x, list );
+
+   // Selecting the elements 1, 2, 3, 3, 2, and 1 (runtime arguments via a std::array)
+   const std::array<size_t> array{ 1UL, 2UL, 3UL, 3UL, 2UL, 1UL };
+   auto e4 = elements( x, array );
+   auto e5 = elements( x, array.data(), array.size() );
+
+   // Selecting the element 4 fives times (runtime arguments via a std::vector)
+   const std::vector<size_t> vector{ 4UL, 4UL, 4UL, 4UL, 4UL };
+   auto e6 = elements( x, vector );
+   auto e7 = elements( x, vector.data(), vector.size() );
+   \endcode
+
+// Note that it is possible to alias the elements of the underlying vector in any order. Also note
+// that it is possible to use the same index multiple times. The \c elements() function returns an
+// expression representing the view on the selected elements. The type of this expression depends
+// on the given arguments, primarily the type of the vector and the compile time arguments. If the
+// type is required, it can be determined via \c decltype or via the \c ElementsExprTrait class
+// template:
+
+   \code
+   using VectorType = blaze::DynamicVector<int>;
+
+   using ElementsType1 = decltype( blaze::elements<4UL,12UL>( std::declval<VectorType>() ) );
+   using ElementsType2 = blaze::ElementsExprTrait<VectorType,4UL,12UL>::Type;
+   \endcode
+
+// The resulting view can be treated as any other dense or sparse vector, i.e. it can be assigned
+// to, it can be copied from, and it can be used in arithmetic operations. An element selection
+// created from a row vector can be used as any other row vector, an element selection created
+// from a column vector can be used as any other column vector. The view can also be used on both
+// sides of an assignment: It can either be used as an alias to grant write access to specific
+// elements of a vector primitive on the left-hand side of an assignment or to grant read-access
+// to specific elements of a vector primitive or expression on the right-hand side of an assignment.
+// The following example demonstrates this in detail:
+
+   \code
+   blaze::DynamicVector<double,blaze::rowVector> x;
+   blaze::CompressedVector<double,blaze::rowVector> y;
+   blaze::DynamicMatrix<double,blaze::rowMajor> A;
+   // ... Resizing and initialization
+
+   // Selecting the elements 1, 3, 5, and 7
+   auto e = elements( x, { 1UL, 3UL, 5UL, 7UL } );
+
+   // Setting the elements 1, 3, 5, and 7 of x to the 2nd row of matrix A
+   e = row( A, 2UL );
+
+   // Setting the elements 2, 4, 6, and 8 of x to y
+   elements( x, { 2UL, 4UL, 6UL, 8UL } ) = y;
+
+   // Setting the 3rd row of A to the elements 5, 4, 3, and 2 of x
+   row( A, 3UL ) = elements( x, { 5UL, 4UL, 3UL, 2UL } );
+
+   // Rotating the result of the addition between y and the 1st row of A
+   x = elements( y + row( A, 1UL ), { 2UL, 3UL, 0UL, 1UL } )
+   \endcode
+
+// Please note that using an element selection, which refers to an index multiple times, on the
+// left-hand side of an assignment leads to undefined behavior:
+
+   \code
+   blaze::DynamicVector<int,blaze::rowVector> a{ 1, 2, 3 };
+   blaze::DynamicVector<int,blaze::rowVector> b{ 1, 2, 3, 4 };
+
+   auto e = elements( a, { 1, 1, 1, 1 } );  // Selecting the element 1 four times
+   e = b;  // Undefined behavior
+   \endcode
+
+// In this example both vectors have the same size, which results in a correct vector assignment,
+// but the final value of the element at index 1 is unspecified.
+//
+//
+// \n \section views_element_selections_element_access Element Access
+//
+// The elements of an element selection can be directly accessed via the subscript operator:
+
+   \code
+   blaze::DynamicVector<double,blaze::rowVector> v;
+   // ... Resizing and initialization
+
+   // Selecting the elements 2, 4, 6, and 8
+   auto e = elements( v, { 2UL, 4UL, 6UL, 8UL } );
+
+   // Setting the 1st element of the element selection, which corresponds to
+   // the element at index 4 in vector v
+   e[1] = 2.0;
+   \endcode
+
+// The numbering of the selected elements is
+
+                             \f[\left(\begin{array}{*{5}{c}}
+                             0 & 1 & 2 & \cdots & N-1 \\
+                             \end{array}\right),\f]
+
+// where N is the number of selected elements. Alternatively, the elements of an element selection
+// can be traversed via iterators. Just as with vectors, in case of non-const element selections,
+// \c begin() and \c end() return an iterator, which allows to manipulate the elements, in case of
+// constant element selections an iterator to immutable elements is returned:
+
+   \code
+   blaze::DynamicVector<int,blaze::rowVector> v( 256UL );
+   // ... Resizing and initialization
+
+   // Creating an element selection including specific elements of dense vector v
+   auto e = elements( v, { 0UL, 3UL, 6UL, 9UL, 12UL } );
+
+   // Traversing the elements via iterators to non-const elements
+   for( auto it=e.begin(); it!=e.end(); ++it ) {
+      *it = ...;  // OK: Write access to the dense vector value.
+      ... = *it;  // OK: Read access to the dense vector value.
+   }
+
+   // Traversing the elements via iterators to const elements
+   for( auto it=e.cbegin(); it!=e.cend(); ++it ) {
+      *it = ...;  // Compilation error: Assignment to the value via iterator-to-const is invalid.
+      ... = *it;  // OK: Read access to the dense vector value.
+   }
+   \endcode
+
+   \code
+   blaze::CompressedVector<int,blaze::rowVector> v( 256UL );
+   // ... Resizing and initialization
+
+   // Creating an element selection including specific elements of sparse vector v
+   auto e = elements( v, { 0UL, 3UL, 6UL, 9UL, 12UL } );
+
+   // Traversing the elements via iterators to non-const elements
+   for( auto it=e.begin(); it!=e.end(); ++it ) {
+      it->value() = ...;  // OK: Write access to the value of the non-zero element.
+      ... = it->value();  // OK: Read access to the value of the non-zero element.
+      it->index() = ...;  // Compilation error: The index of a non-zero element cannot be changed.
+      ... = it->index();  // OK: Read access to the index of the sparse element.
+   }
+
+   // Traversing the elements via iterators to const elements
+   for( auto it=e.cbegin(); it!=e.cend(); ++it ) {
+      it->value() = ...;  // Compilation error: Assignment to the value via iterator-to-const is invalid.
+      ... = it->value();  // OK: Read access to the value of the non-zero element.
+      it->index() = ...;  // Compilation error: The index of a non-zero element cannot be changed.
+      ... = it->index();  // OK: Read access to the index of the sparse element.
+   }
+   \endcode
+
+// \n \section views_element_selections_element_insertion Element Insertion
+//
+// Inserting/accessing elements in a sparse element selection can be done by several alternative
+// functions. The following example demonstrates all options:
+
+   \code
+   blaze::CompressedVector<double,blaze::rowVector> v( 256UL );  // Non-initialized vector of size 256
+
+   std::vector<size_t> indices;
+   // ... Selecting indices of the sparse vector
+
+   auto e = elements( v, indices );
+
+   // The subscript operator provides access to the selected elements of the sparse vector,
+   // including the zero elements. In case the subscript operator is used to access an element
+   // that is currently not stored in the sparse vector, the element is inserted.
+   e[42] = 2.0;
+
+   // The second operation for inserting elements via the element selection is the set() function.
+   // In case the element is not contained in the vector it is inserted into the vector, if it is
+   // already contained in the vector its value is modified.
+   e.set( 45UL, -1.2 );
+
+   // An alternative for inserting elements into the vector is the insert() function. However, it
+   // inserts the element only in case the element is not already contained in the vector.
+   e.insert( 50UL, 3.7 );
+
+   // Just as in case of vectors, elements can also be inserted via the append() function. In case
+   // of element selections, append() also requires that the appended element's index is strictly
+   // larger than the currently largest non-zero index of the selection and that the selections's
+   // capacity is large enough to hold the new element. Note however that due to the nature of an
+   // element selection, which is an alias to arbitrary elements of a sparse vector, the append()
+   // function does not work as efficiently for an element selection as it does for a vector.
+   e.reserve( 10UL );
+   e.append( 51UL, -2.1 );
+   \endcode
+
+// \n \section views_element_selections_common_operations Common Operations
+//
+// An element selection can be used like any other dense or sparse vector. For instance, the
+// number of selected elements can be obtained via the \c size() function, the current capacity
+// via the \c capacity() function, and the number of non-zero elements via the \c nonZeros()
+// function. However, since element selections are references to a specific range of a vector,
+// several operations are not possible, such as resizing and swapping. The following example
+// shows this by means of an element selection on a dense vector:
+
+   \code
+   blaze::DynamicVector<int,blaze::rowVector> v( 42UL );
+   // ... Resizing and initialization
+
+   // Selecting the elements 5 and 10
+   auto e = elements( v, { 5UL, 10UL } );
+
+   e.size();          // Returns the number of elements in the element selection
+   e.capacity();      // Returns the capacity of the element selection
+   e.nonZeros();      // Returns the number of non-zero elements contained in the element selection
+
+   e.resize( 84UL );  // Compilation error: Cannot resize an element selection
+
+   auto e2 = elements( v, { 15UL, 10UL } );
+   swap( e, e2 );   // Compilation error: Swap operation not allowed
+   \endcode
+
+// \n \section views_element_selections_arithmetic_operations Arithmetic Operations
+//
+// Both dense and sparse element selections can be used in all arithmetic operations that any other
+// dense or sparse vector can be used in. The following example gives an impression of the use of
+// dense element selections within arithmetic operations. All operations (addition, subtraction,
+// multiplication, scaling, ...) can be performed on all possible combinations of dense and sparse
+// element selections with fitting element types:
+
+   \code
+   blaze::DynamicVector<double,blaze::rowVector> d1, d2, d3;
+   blaze::CompressedVector<double,blaze::rowVector> s1, s2;
+
+   // ... Resizing and initialization
+
+   blaze::DynamicMatrix<double,blaze::rowMajor> A;
+
+   std::initializer_list<size_t> indices1{ 0UL, 3UL, 6UL,  9UL, 12UL, 15UL, 18UL, 21UL };
+   std::initializer_list<size_t> indices2{ 1UL, 4UL, 7UL, 10UL, 13UL, 16UL, 19UL, 22UL };
+   std::initializer_list<size_t> indices3{ 2UL, 5UL, 8UL, 11UL, 14UL, 17UL, 20UL, 23UL };
+
+   auto e( elements( d1, indices1 ) );  // Selecting the every third element of d1 in the range [0..21]
+
+   e = d2;                         // Dense vector assignment to the selected elements
+   elements( d1, indices2 ) = s1;  // Sparse vector assignment to the selected elements
+
+   d3 = e + d2;                         // Dense vector/dense vector addition
+   s2 = s1 + elements( d1, indices2 );  // Sparse vector/dense vector addition
+   d2 = e * elements( d1, indices3 );   // Component-wise vector multiplication
+
+   elements( d1, indices2 ) *= 2.0;      // In-place scaling of the second selection of elements
+   d2 = elements( d1, indices3 ) * 2.0;  // Scaling of the elements in the third selection of elements
+   d2 = 2.0 * elements( d1, indices3 );  // Scaling of the elements in the third selection of elements
+
+   elements( d1, indices1 ) += d2;  // Addition assignment
+   elements( d1, indices2 ) -= s2;  // Subtraction assignment
+   elements( d1, indices3 ) *= e;   // Multiplication assignment
+
+   double scalar = elements( d1, indices2 ) * trans( s1 );  // Scalar/dot/inner product between two vectors
+
+   A = trans( s1 ) * elements( d1, { 3UL, 6UL } );  // Outer product between two vectors
+   \endcode
+
+// \n Previous: \ref views_subvectors &nbsp; &nbsp; Next: \ref views_submatrices
 */
 //*************************************************************************************************
 
@@ -7317,7 +8058,7 @@
    using MatrixType = blaze::DynamicMatrix<int>;
 
    using SubmatrixType1 = decltype( blaze::submatrix<3UL,0UL,4UL,8UL>( std::declval<MatrixType>() ) );
-   using SubmatrixType2 = blaze::SubmatrixExprTrait<VectorType,3UL,0UL,4UL,8UL>::Type;
+   using SubmatrixType2 = blaze::SubmatrixExprTrait<MatrixType,3UL,0UL,4UL,8UL>::Type;
    \endcode
 
 // The resulting view can be treated as any other dense or sparse matrix, i.e. it can be assigned
@@ -7425,7 +8166,7 @@
    auto sm = submatrix( A, 10UL, 10UL, 16UL, 16UL );  // View on a 16x16 submatrix of A
 
    // The function call operator provides access to all possible elements of the sparse submatrix,
-   // including the zero elements. In case the subscript operator is used to access an element
+   // including the zero elements. In case the function call operator is used to access an element
    // that is currently not stored in the sparse submatrix, the element is inserted into the
    // submatrix.
    sm(2,4) = 2.0;
@@ -7462,7 +8203,7 @@
 // such as resizing and swapping:
 
    \code
-   blaze::DynamicMatrix<int,blaze::rowMajor>
+   blaze::DynamicMatrix<int,blaze::rowMajor> A( 42UL, 42UL );
    // ... Resizing and initialization
 
    // Creating a view on the a 8x12 submatrix of matrix A
@@ -7490,7 +8231,7 @@
 
    \code
    blaze::DynamicMatrix<double,blaze::rowMajor> D1, D2, D3;
-   blaze::CompressedMatrix<double,blaze::rowMajor>
+   blaze::CompressedMatrix<double,blaze::rowMajor> S1, S2;
 
    blaze::CompressedVector<double,blaze::columnVector> a, b;
 
@@ -7503,9 +8244,9 @@
                                               // starting in row 0 and column 8
    sm = S1;                                   // Sparse matrix initialization of the second 8x8 submatrix
 
-   D3 = sm + D2;                                    // Dense matrix/dense matrix addition
-   S2 = S1  - submatrix( D1, 8UL, 0UL, 8UL, 8UL );  // Sparse matrix/dense matrix subtraction
-   D2 = sm * submatrix( D1, 8UL, 8UL, 8UL, 8UL );   // Dense matrix/dense matrix multiplication
+   D3 = sm + D2;                                   // Dense matrix/dense matrix addition
+   S2 = S1 - submatrix( D1, 8UL, 0UL, 8UL, 8UL );  // Sparse matrix/dense matrix subtraction
+   D2 = sm * submatrix( D1, 8UL, 8UL, 8UL, 8UL );  // Dense matrix/dense matrix multiplication
 
    submatrix( D1, 8UL, 0UL, 8UL, 8UL ) *= 2.0;      // In-place scaling of a submatrix of D1
    D2 = submatrix( D1, 8UL, 8UL, 8UL, 8UL ) * 2.0;  // Scaling of the a submatrix of D1
@@ -7659,7 +8400,7 @@
    submatrix( A2, 0UL, 1UL, 3UL, 2UL ) = B;  // Assignment throws an exception!
    \endcode
 
-// \n Previous: \ref views_subvectors &nbsp; &nbsp; Next: \ref views_rows
+// \n Previous: \ref views_element_selections &nbsp; &nbsp; Next: \ref views_rows
 */
 //*************************************************************************************************
 
@@ -7962,7 +8703,321 @@
 // Although \b Blaze performs the resulting vector/matrix multiplication as efficiently as possible
 // using a row-major storage order for matrix \c A would result in a more efficient evaluation.
 //
-// \n Previous: \ref views_submatrices &nbsp; &nbsp; Next: \ref views_columns
+// \n Previous: \ref views_submatrices &nbsp; &nbsp; Next: \ref views_row_selections
+*/
+//*************************************************************************************************
+
+
+//**Row Selections*********************************************************************************
+/*!\page views_row_selections Row Selections
+//
+// \tableofcontents
+//
+//
+// Row selections provide views on arbitrary compositions of rows of dense and sparse matrices.
+// These views act as a reference to the selected rows and represent them as another dense or
+// sparse matrix. This reference is valid and can be used in every way any other dense or sparse
+// matrix can be used as long as the matrix containing the rows is not resized or entirely
+// destroyed. The row selection also acts as an alias to the matrix elements in the specified
+// range: Changes made to the rows (e.g. modifying values, inserting or erasing elements) are
+// immediately visible in the matrix and changes made via the matrix are immediately visible
+// in the rows.
+//
+//
+// \n \section views_row_selections_setup Setup of Row Selections
+//
+// A row selection can be created very conveniently via the \c rows() function. It can be included
+// via the header file
+
+   \code
+   #include <blaze/math/Rows.h>
+   \endcode
+
+// The indices of the rows to be selected can be specified either at compile time or at runtime
+// (by means of an initializer list, array or vector):
+
+   \code
+   blaze::DynamicMatrix<double,blaze::rowMajor> A;
+   // ... Resizing and initialization
+
+   // Selecting the rows 4, 6, 8, and 10 (compile time arguments)
+   auto rs1 = rows<4UL,6UL,8UL,10UL>( A );
+
+   // Selecting the rows 3, 2, and 1 (runtime arguments via an initializer list)
+   const std::initializer_list<size_t> list{ 3UL, 2UL, 1UL };
+   auto rs2 = rows( A, { 3UL, 2UL, 1UL } );
+   auto rs3 = rows( A, list );
+
+   // Selecting the rows 1, 2, 3, 3, 2, and 1 (runtime arguments via a std::array)
+   const std::array<size_t> array{ 1UL, 2UL, 3UL, 3UL, 2UL, 1UL };
+   auto rs4 = rows( A, array );
+   auto rs5 = rows( A, array.data(), array.size() );
+
+   // Selecting the row 4 fives times (runtime arguments via a std::vector)
+   const std::vector<size_t> vector{ 4UL, 4UL, 4UL, 4UL, 4UL };
+   auto rs6 = rows( A, vector );
+   auto rs7 = rows( A, vector.data(), vector.size() );
+   \endcode
+
+// Note that it is possible to alias the rows of the underlying matrix in any order. Also note
+// that it is possible to use the same index multiple times. The \c rows() function returns an
+// expression representing the view on the selected rows. The type of this expression depends
+// on the given arguments, primarily the type of the matrix and the compile time arguments. If
+// the type is required, it can be determined via \c decltype or via the \c RowsExprTrait class
+// template:
+
+   \code
+   using MatrixType = blaze::DynamicMatrix<int>;
+
+   using RowsType1 = decltype( blaze::rows<3UL,0UL,4UL,8UL>( std::declval<MatrixType>() ) );
+   using RowsType2 = blaze::RowsExprTrait<MatrixType,3UL,0UL,4UL,8UL>::Type;
+   \endcode
+
+// The resulting view can be treated as any other dense or sparse matrix, i.e. it can be assigned
+// to, it can be copied from, and it can be used in arithmetic operations. Note, however, that a
+// row selection will always be treated as a row-major matrix, regardless of the storage order of
+// the matrix containing the rows. The view can also be used on both sides of an assignment: It
+// can either be used as an alias to grant write access to specific rows of a matrix primitive
+// on the left-hand side of an assignment or to grant read-access to specific rows of a matrix
+// primitive or expression on the right-hand side of an assignment. The following example
+// demonstrates this in detail:
+
+   \code
+   blaze::DynamicMatrix<double,blaze::rowMajor> A;
+   blaze::DynamicMatrix<double,blaze::columnMajor> B;
+   blaze::CompressedMatrix<double,blaze::rowMajor> C;
+   // ... Resizing and initialization
+
+   // Selecting the rows 1, 3, 5, and 7 of A
+   auto rs = rows( A, { 1UL, 3UL, 5UL, 7UL } );
+
+   // Setting rows 1, 3, 5, and 7 of A to row 4 of B
+   rs = rows( B, { 4UL, 4UL, 4UL, 4UL } );
+
+   // Setting the rows 2, 4, 6, and 8 of A to C
+   rows( A, { 2UL, 4UL, 6UL, 8UL } ) = C;
+
+   // Setting the first 4 rows of A to the rows 5, 4, 3, and 2 of C
+   submatrix( A, 0UL, 0UL, 4UL, A.columns() ) = rows( C, { 5UL, 4UL, 3UL, 2UL } );
+
+   // Rotating the result of the addition between rows 1, 3, 5, and 7 of A and C
+   B = rows( rs + C, { 2UL, 3UL, 0UL, 1UL } );
+   \endcode
+
+// \n \section views_row_selections_element_access Element Access
+//
+// The elements of a row selection can be directly accessed via the function call operator:
+
+   \code
+   blaze::DynamicMatrix<double,blaze::rowMajor> A;
+   // ... Resizing and initialization
+
+   // Creating a view on the first four rows of A in reverse order
+   auto rs = rows( A, { 3UL, 2UL, 1UL, 0UL } );
+
+   // Setting the element (0,0) of the row selection, which corresponds
+   // to the element at position (3,0) in matrix A
+   rs(0,0) = 2.0;
+   \endcode
+
+// Alternatively, the elements of a row selection can be traversed via (const) iterators. Just as
+// with matrices, in case of non-const row selection, \c begin() and \c end() return an iterator,
+// which allows to manipuate the elements, in case of constant row selection an iterator to
+// immutable elements is returned:
+
+   \code
+   blaze::DynamicMatrix<int,blaze::rowMajor> A( 256UL, 512UL );
+   // ... Resizing and initialization
+
+   // Creating a reference to a selection of rows of matrix A
+   auto rs = rows( A, { 16UL, 32UL, 64UL, 128UL } );
+
+   // Traversing the elements of the 0th row via iterators to non-const elements
+   for( auto it=rs.begin(0); it!=rs.end(0); ++it ) {
+      *it = ...;  // OK: Write access to the dense value.
+      ... = *it;  // OK: Read access to the dense value.
+   }
+
+   // Traversing the elements of the 1st row via iterators to const elements
+   for( auto it=rs.cbegin(1); it!=rs.cend(1); ++it ) {
+      *it = ...;  // Compilation error: Assignment to the value via iterator-to-const is invalid.
+      ... = *it;  // OK: Read access to the dense value.
+   }
+   \endcode
+
+   \code
+   blaze::CompressedMatrix<int,blaze::rowMajor> A( 256UL, 512UL );
+   // ... Resizing and initialization
+
+   // Creating a reference to a selection of rows of matrix A
+   auto rs = rows( A, { 16UL, 32UL, 64UL, 128UL } );
+
+   // Traversing the elements of the 0th row via iterators to non-const elements
+   for( auto it=rs.begin(0); it!=rs.end(0); ++it ) {
+      it->value() = ...;  // OK: Write access to the value of the non-zero element.
+      ... = it->value();  // OK: Read access to the value of the non-zero element.
+      it->index() = ...;  // Compilation error: The index of a non-zero element cannot be changed.
+      ... = it->index();  // OK: Read access to the index of the sparse element.
+   }
+
+   // Traversing the elements of the 1st row via iterators to const elements
+   for( auto it=rs.cbegin(1); it!=rs.cend(1); ++it ) {
+      it->value() = ...;  // Compilation error: Assignment to the value via iterator-to-const is invalid.
+      ... = it->value();  // OK: Read access to the value of the non-zero element.
+      it->index() = ...;  // Compilation error: The index of a non-zero element cannot be changed.
+      ... = it->index();  // OK: Read access to the index of the sparse element.
+   }
+   \endcode
+
+// \n \section views_row_selections_element_insertion Element Insertion
+//
+// Inserting/accessing elements in a sparse row selection can be done by several alternative
+// functions. The following example demonstrates all options:
+
+   \code
+   blaze::CompressedMatrix<double,blaze::rowMajor> A( 256UL, 512UL );  // Non-initialized matrix of size 256x512
+
+   auto rs = rows( A, { 10UL, 20UL, 30UL, 40UL } );  // View on the rows 10, 20, 30, and 40 of A
+
+   // The function call operator provides access to all possible elements of the sparse row
+   // selection, including the zero elements. In case the function call operator is used to
+   // access an element that is currently not stored in the sparse row selection, the element
+   // is inserted into the row selection.
+   rs(2,4) = 2.0;
+
+   // The second operation for inserting elements is the set() function. In case the element is
+   // not contained in the row selection it is inserted into the row selection, if it is already
+   // contained in the row selection its value is modified.
+   rs.set( 2UL, 5UL, -1.2 );
+
+   // An alternative for inserting elements into the row selection is the insert() function.
+   // However, it inserts the element only in case the element is not already contained in the
+   // row selection.
+   rs.insert( 2UL, 6UL, 3.7 );
+
+   // Just as in the case of sparse matrices, elements can also be inserted via the append()
+   // function. In case of row selections, append() also requires that the appended element's
+   // index is strictly larger than the currently largest non-zero index in the according row
+   // of the row selection and that the according row's capacity is large enough to hold the new
+   // element. Note however that due to the nature of a row selection, which may be an alias to
+   // an arbitrary collection of rows, the append() function does not work as efficiently for
+   // a row selection as it does for a matrix.
+   rs.reserve( 2UL, 10UL );
+   rs.append( 2UL, 10UL, -2.1 );
+   \endcode
+
+// \n \section views_row_selections_common_operations Common Operations
+//
+// A view on specific rows of a matrix can be used like any other dense or sparse matrix. For
+// instance, the current size of the matrix, i.e. the number of rows or columns can be obtained
+// via the \c rows() and \c columns() functions, the current total capacity via the \c capacity()
+// function, and the number of non-zero elements via the \c nonZeros() function. However, since
+// row selections are views on specific rows of a matrix, several operations are not possible,
+// such as resizing and swapping:
+
+   \code
+   blaze::DynamicMatrix<int,blaze::rowMajor> A( 42UL, 42UL );
+   // ... Resizing and initialization
+
+   // Creating a view on the rows 8, 16, 24, and 32 of matrix A
+   auto rs = rows( A, { 8UL, 16UL, 24UL, 32UL } );
+
+   rs.rows();      // Returns the number of rows of the row selection
+   rs.columns();   // Returns the number of columns of the row selection
+   rs.capacity();  // Returns the capacity of the row selection
+   rs.nonZeros();  // Returns the number of non-zero elements contained in the row selection
+
+   rs.resize( 10UL, 8UL );  // Compilation error: Cannot resize a row selection
+
+   auto rs2 = rows( A, 9UL, 17UL, 25UL, 33UL );
+   swap( rs, rs2 );  // Compilation error: Swap operation not allowed
+   \endcode
+
+// \n \section views_row_selections_arithmetic_operations Arithmetic Operations
+//
+// Both dense and sparse row selections can be used in all arithmetic operations that any other
+// dense or sparse matrix can be used in. The following example gives an impression of the use
+// of dense row selctions within arithmetic operations. All operations (addition, subtraction,
+// multiplication, scaling, ...) can be performed on all possible combinations of dense and
+// sparse matrices with fitting element types:
+
+   \code
+   blaze::DynamicMatrix<double,blaze::rowMajor> D1, D2, D3;
+   blaze::CompressedMatrix<double,blaze::rowMajor> S1, S2;
+
+   blaze::CompressedVector<double,blaze::columnVector> a, b;
+
+   // ... Resizing and initialization
+
+   std::initializer_list<size_t> indices1{ 0UL, 3UL, 6UL,  9UL, 12UL, 15UL, 18UL, 21UL };
+   std::initializer_list<size_t> indices2{ 1UL, 4UL, 7UL, 10UL, 13UL, 16UL, 19UL, 22UL };
+   std::initializer_list<size_t> indices3{ 2UL, 5UL, 8UL, 11UL, 14UL, 17UL, 20UL, 23UL };
+
+   auto rs = rows( D1, indices1 );  // Selecting the every third row of D1 in the range [0..21]
+
+   rs = D2;                    // Dense matrix assignment to the selected rows
+   rows( D1, indices2 ) = S1;  // Sparse matrix assignment to the selected rows
+
+   D3 = rs + D2;                    // Dense matrix/dense matrix addition
+   S2 = S1 - rows( D1, indices2 );  // Sparse matrix/dense matrix subtraction
+   D2 = rs % rows( D1, indices3 );  // Dense matrix/dense matrix Schur product
+   D2 = rows( D1, indices2 ) * D1;  // Dense matrix/dense matrix multiplication
+
+   rows( D1, indices2 ) *= 2.0;      // In-place scaling of the second selection of rows
+   D2 = rows( D1, indices3 ) * 2.0;  // Scaling of the elements in the third selection of rows
+   D2 = 2.0 * rows( D1, indices3 );  // Scaling of the elements in the third selection of rows
+
+   rows( D1, indices1 ) += D2;  // Addition assignment
+   rows( D1, indices2 ) -= S1;  // Subtraction assignment
+   rows( D1, indices3 ) %= rs;  // Schur product assignment
+
+   a = rows( D1, indices1 ) * b;  // Dense matrix/sparse vector multiplication
+   \endcode
+
+// \n \section views_row_selections_on_column_major_matrix Row Selections on Column-Major Matrices
+//
+// Especially noteworthy is that row selections can be created for both row-major and column-major
+// matrices. Whereas the interface of a row-major matrix only allows to traverse a row directly
+// and the interface of a column-major matrix only allows to traverse a column, via views it is
+// possible to traverse a row of a column-major matrix or a column of a row-major matrix. For
+// instance:
+
+   \code
+   blaze::DynamicMatrix<int,blaze::columnMajor> A( 64UL, 32UL );
+   // ... Resizing and initialization
+
+   // Creating a reference to the 1st and 3rd row of a column-major matrix A
+   auto rs = rows( A, { 1UL, 3UL } );
+
+   // Traversing row 0 of the selection, which corresponds to the 1st row of matrix A
+   for( auto it=rs.begin( 0UL ); it!=rs.end( 0UL ); ++it ) {
+      // ...
+   }
+   \endcode
+
+// However, please note that creating a row selection on a matrix stored in a column-major fashion
+// can result in a considerable performance decrease in comparison to a row selection on a matrix
+// with row-major storage format. This is due to the non-contiguous storage of the matrix elements.
+// Therefore care has to be taken in the choice of the most suitable storage order:
+
+   \code
+   // Setup of two column-major matrices
+   blaze::DynamicMatrix<double,blaze::columnMajor> A( 128UL, 128UL );
+   blaze::DynamicMatrix<double,blaze::columnMajor> B( 128UL, 128UL );
+   // ... Resizing and initialization
+
+   // The computation of the 15th, 30th, and 45th row of the multiplication between A and B ...
+   blaze::DynamicMatrix<double,blaze::rowMajor> x = rows( A * B, { 15UL, 30UL, 45UL } );
+
+   // ... is essentially the same as the following computation, which multiplies
+   // the 15th, 30th, and 45th row of the column-major matrix A with B.
+   blaze::DynamicMatrix<double,blaze::rowMajor> x = rows( A, { 15UL, 30UL, 45UL } ) * B;
+   \endcode
+
+// Although \b Blaze performs the resulting matrix/matrix multiplication as efficiently as possible
+// using a row-major storage order for matrix \c A would result in a more efficient evaluation.
+//
+// \n Previous: \ref views_rows &nbsp; &nbsp; Next: \ref views_columns
 */
 //*************************************************************************************************
 
@@ -8259,13 +9314,328 @@
 
    // ... is essentially the same as the following computation, which multiplies
    // A with the 15th column of the row-major matrix B.
-   blaze::DynamicVector<double,blaze::rowVector> x = A * column( B, 15UL );
+   blaze::DynamicVector<double,blaze::columnVector> x = A * column( B, 15UL );
    \endcode
 
 // Although \b Blaze performs the resulting matrix/vector multiplication as efficiently as possible
 // using a column-major storage order for matrix \c B would result in a more efficient evaluation.
 //
-// \n Previous: \ref views_rows &nbsp; &nbsp; Next: \ref views_bands
+// \n Previous: \ref views_row_selections &nbsp; &nbsp; Next: \ref views_column_selections
+*/
+//*************************************************************************************************
+
+
+//**Column Selections******************************************************************************
+/*!\page views_column_selections Column Selections
+//
+// \tableofcontents
+//
+//
+// Column selections provide views on arbitrary compositions of columns of dense and sparse
+// matrices. These views act as a reference to the selected columns and represent them as another
+// dense or sparse matrix. This reference is valid and can be used in every way any other dense
+// or sparse matrix can be used as long as the matrix containing the columns is not resized or
+// entirely destroyed. The column selection also acts as an alias to the matrix elements in the
+// specified range: Changes made to the columns (e.g. modifying values, inserting or erasing
+// elements) are immediately visible in the matrix and changes made via the matrix are immediately
+// visible in the columns.
+//
+//
+// \n \section views_column_selections_setup Setup of Column Selections
+//
+// A column selection can be created very conveniently via the \c columns() function. It can be
+// included via the header file
+
+   \code
+   #include <blaze/math/Columns.h>
+   \endcode
+
+// The indices of the columns to be selected can be specified either at compile time or at runtime
+// (by means of an initializer list, array or vector):
+
+   \code
+   blaze::DynamicMatrix<double,blaze::columnMajor> A;
+   // ... Resizing and initialization
+
+   // Selecting the columns 4, 6, 8, and 10 (compile time arguments)
+   auto cs1 = columns<4UL,6UL,8UL,10UL>( A );
+
+   // Selecting the columns 3, 2, and 1 (runtime arguments via an initializer list)
+   const std::initializer_list<size_t> list{ 3UL, 2UL, 1UL };
+   auto cs2 = columns( A, { 3UL, 2UL, 1UL } );
+   auto cs3 = columns( A, list );
+
+   // Selecting the columns 1, 2, 3, 3, 2, and 1 (runtime arguments via a std::array)
+   const std::array<size_t> array{ 1UL, 2UL, 3UL, 3UL, 2UL, 1UL };
+   auto cs4 = columns( A, array );
+   auto cs5 = columns( A, array.data(), array.size() );
+
+   // Selecting the column 4 fives times (runtime arguments via a std::vector)
+   const std::vector<size_t> vector{ 4UL, 4UL, 4UL, 4UL, 4UL };
+   auto cs6 = columns( A, vector );
+   auto cs7 = columns( A, vector.data(), vector.size() );
+   \endcode
+
+// Note that it is possible to alias the columns of the underlying matrix in any order. Also note
+// that it is possible to use the same index multiple times. The \c columns() function returns an
+// expression representing the view on the selected columns. The type of this expression depends
+// on the given arguments, primarily the type of the matrix and the compile time arguments. If
+// the type is required, it can be determined via \c decltype or via the \c ColumnsExprTrait
+// class template:
+
+   \code
+   using MatrixType = blaze::DynamicMatrix<int>;
+
+   using ColumnsType1 = decltype( blaze::columns<3UL,0UL,4UL,8UL>( std::declval<MatrixType>() ) );
+   using ColumnsType2 = blaze::ColumnsExprTrait<MatrixType,3UL,0UL,4UL,8UL>::Type;
+   \endcode
+
+// The resulting view can be treated as any other dense or sparse matrix, i.e. it can be assigned
+// to, it can be copied from, and it can be used in arithmetic operations. Note, however, that a
+// column selection will always be treated as a column-major matrix, regardless of the storage
+// order of the matrix containing the columns. The view can also be used on both sides of an
+// assignment: It can either be used as an alias to grant write access to specific columns of a
+// matrix primitive on the left-hand side of an assignment or to grant read-access to specific
+// columns of a matrix primitive or expression on the right-hand side of an assignment. The
+// following example demonstrates this in detail:
+
+   \code
+   blaze::DynamicMatrix<double,blaze::columnMajor> A;
+   blaze::DynamicMatrix<double,blaze::rowMajor> B;
+   blaze::CompressedMatrix<double,blaze::columnMajor> C;
+   // ... Resizing and initialization
+
+   // Selecting the columns 1, 3, 5, and 7 of A
+   auto cs = columns( A, { 1UL, 3UL, 5UL, 7UL } );
+
+   // Setting columns 1, 3, 5, and 7 of A to column 4 of B
+   cs = columns( B, { 4UL, 4UL, 4UL, 4UL } );
+
+   // Setting the columns 2, 4, 6, and 8 of A to C
+   columns( A, { 2UL, 4UL, 6UL, 8UL } ) = C;
+
+   // Setting the first 4 columns of A to the columns 5, 4, 3, and 2 of C
+   submatrix( A, 0UL, 0UL, A.rows(), 4UL ) = columns( C, { 5UL, 4UL, 3UL, 2UL } );
+
+   // Rotating the result of the addition between columns 1, 3, 5, and 7 of A and C
+   B = columns( cs + C, { 2UL, 3UL, 0UL, 1UL } );
+   \endcode
+
+// \n \section views_column_selections_element_access Element Access
+//
+// The elements of a column selection can be directly accessed via the function call operator:
+
+   \code
+   blaze::DynamicMatrix<double,blaze::columnMajor> A;
+   // ... Resizing and initialization
+
+   // Creating a view on the first four columns of A in reverse order
+   auto cs = columns( A, { 3UL, 2UL, 1UL, 0UL } );
+
+   // Setting the element (0,0) of the column selection, which corresponds
+   // to the element at position (0,3) in matrix A
+   cs(0,0) = 2.0;
+   \endcode
+
+// Alternatively, the elements of a column selection can be traversed via (const) iterators.
+// Just as with matrices, in case of non-const column selection, \c begin() and \c end() return
+// an iterator, which allows to manipuate the elements, in case of constant column selection an
+// iterator to immutable elements is returned:
+
+   \code
+   blaze::DynamicMatrix<int,blaze::columnMajor> A( 512UL, 256UL );
+   // ... Resizing and initialization
+
+   // Creating a reference to a selection of columns of matrix A
+   auto cs = columns( A, { 16UL, 32UL, 64UL, 128UL } );
+
+   // Traversing the elements of the 0th column via iterators to non-const elements
+   for( auto it=cs.begin(0); it!=cs.end(0); ++it ) {
+      *it = ...;  // OK: Write access to the dense value.
+      ... = *it;  // OK: Read access to the dense value.
+   }
+
+   // Traversing the elements of the 1st column via iterators to const elements
+   for( auto it=cs.cbegin(1); it!=cs.cend(1); ++it ) {
+      *it = ...;  // Compilation error: Assignment to the value via iterator-to-const is invalid.
+      ... = *it;  // OK: Read access to the dense value.
+   }
+   \endcode
+
+   \code
+   blaze::CompressedMatrix<int,blaze::columnMajor> A( 512UL, 256UL );
+   // ... Resizing and initialization
+
+   // Creating a reference to a selection of columns of matrix A
+   auto cs = columns( A, { 16UL, 32UL, 64UL, 128UL } );
+
+   // Traversing the elements of the 0th column via iterators to non-const elements
+   for( auto it=cs.begin(0); it!=cs.end(0); ++it ) {
+      it->value() = ...;  // OK: Write access to the value of the non-zero element.
+      ... = it->value();  // OK: Read access to the value of the non-zero element.
+      it->index() = ...;  // Compilation error: The index of a non-zero element cannot be changed.
+      ... = it->index();  // OK: Read access to the index of the sparse element.
+   }
+
+   // Traversing the elements of the 1st column via iterators to const elements
+   for( auto it=cs.cbegin(1); it!=cs.cend(1); ++it ) {
+      it->value() = ...;  // Compilation error: Assignment to the value via iterator-to-const is invalid.
+      ... = it->value();  // OK: Read access to the value of the non-zero element.
+      it->index() = ...;  // Compilation error: The index of a non-zero element cannot be changed.
+      ... = it->index();  // OK: Read access to the index of the sparse element.
+   }
+   \endcode
+
+// \n \section views_column_selections_element_insertion Element Insertion
+//
+// Inserting/accessing elements in a sparse column selection can be done by several alternative
+// functions. The following example demonstrates all options:
+
+   \code
+   blaze::CompressedMatrix<double,blaze::columnMajor> A( 512UL, 256UL );  // Non-initialized matrix of size 512x256
+
+   auto cs = columns( A, { 10UL, 20UL, 30UL, 40UL } );  // View on the columns 10, 20, 30, and 40 of A
+
+   // The function call operator provides access to all possible elements of the sparse column
+   // selection, including the zero elements. In case the function call operator is used to
+   // access an element that is currently not stored in the sparse column selection, the element
+   // is inserted into the column selection.
+   cs(2,4) = 2.0;
+
+   // The second operation for inserting elements is the set() function. In case the element is
+   // not contained in the column selection it is inserted into the column selection, if it is
+   // already contained in the column selection its value is modified.
+   cs.set( 2UL, 5UL, -1.2 );
+
+   // An alternative for inserting elements into the column selection is the insert() function.
+   // However, it inserts the element only in case the element is not already contained in the
+   // column selection.
+   cs.insert( 2UL, 6UL, 3.7 );
+
+   // Just as in the case of sparse matrices, elements can also be inserted via the append()
+   // function. In case of column selections, append() also requires that the appended element's
+   // index is strictly larger than the currently largest non-zero index in the according column
+   // of the column selection and that the according column's capacity is large enough to hold the
+   // new element. Note however that due to the nature of a column selection, which may be an alias
+   // to an arbitrary collection of columns, the append() function does not work as efficiently
+   // for a column selection as it does for a matrix.
+   cs.reserve( 2UL, 10UL );
+   cs.append( 2UL, 10UL, -2.1 );
+   \endcode
+
+// \n \section views_column_selections_common_operations Common Operations
+//
+// A view on specific columns of a matrix can be used like any other dense or sparse matrix. For
+// instance, the current size of the matrix, i.e. the number of rows or columns can be obtained
+// via the \c rows() and \c columns() functions, the current total capacity via the \c capacity()
+// function, and the number of non-zero elements via the \c nonZeros() function. However, since
+// column selections are views on specific columns of a matrix, several operations are not possible,
+// such as resizing and swapping:
+
+   \code
+   blaze::DynamicMatrix<int,blaze::columnMajor> A( 42UL, 42UL );
+   // ... Resizing and initialization
+
+   // Creating a view on the columns 8, 16, 24, and 32 of matrix A
+   auto cs = columns( A, { 8UL, 16UL, 24UL, 32UL } );
+
+   cs.rows();      // Returns the number of rows of the column selection
+   cs.columns();   // Returns the number of columns of the column selection
+   cs.capacity();  // Returns the capacity of the column selection
+   cs.nonZeros();  // Returns the number of non-zero elements contained in the column selection
+
+   cs.resize( 10UL, 8UL );  // Compilation error: Cannot resize a column selection
+
+   auto cs2 = columns( A, 9UL, 17UL, 25UL, 33UL );
+   swap( cs, cs2 );  // Compilation error: Swap operation not allowed
+   \endcode
+
+// \n \section views_column_selections_arithmetic_operations Arithmetic Operations
+//
+// Both dense and sparse column selections can be used in all arithmetic operations that any other
+// dense or sparse matrix can be used in. The following example gives an impression of the use of
+// dense column selctions within arithmetic operations. All operations (addition, subtraction,
+// multiplication, scaling, ...) can be performed on all possible combinations of dense and
+// sparse matrices with fitting element types:
+
+   \code
+   blaze::DynamicMatrix<double,blaze::columnMajor> D1, D2, D3;
+   blaze::CompressedMatrix<double,blaze::columnMajor> S1, S2;
+
+   blaze::CompressedVector<double,blaze::columnVector> a, b;
+
+   // ... Resizing and initialization
+
+   std::initializer_list<size_t> indices1{ 0UL, 3UL, 6UL,  9UL, 12UL, 15UL, 18UL, 21UL };
+   std::initializer_list<size_t> indices2{ 1UL, 4UL, 7UL, 10UL, 13UL, 16UL, 19UL, 22UL };
+   std::initializer_list<size_t> indices3{ 2UL, 5UL, 8UL, 11UL, 14UL, 17UL, 20UL, 23UL };
+
+   auto cs = columns( D1, indices1 );  // Selecting the every third column of D1 in the range [0..21]
+
+   cs = D2;                       // Dense matrix assignment to the selected columns
+   columns( D1, indices2 ) = S1;  // Sparse matrix assignment to the selected columns
+
+   D3 = cs + D2;                       // Dense matrix/dense matrix addition
+   S2 = S1 - columns( D1, indices2 );  // Sparse matrix/dense matrix subtraction
+   D2 = cs % columns( D1, indices3 );  // Dense matrix/dense matrix Schur product
+   D2 = columns( D1, indices2 ) * D1;  // Dense matrix/dense matrix multiplication
+
+   columns( D1, indices2 ) *= 2.0;      // In-place scaling of the second selection of columns
+   D2 = columns( D1, indices3 ) * 2.0;  // Scaling of the elements in the third selection of columns
+   D2 = 2.0 * columns( D1, indices3 );  // Scaling of the elements in the third selection of columns
+
+   columns( D1, indices1 ) += D2;  // Addition assignment
+   columns( D1, indices2 ) -= S1;  // Subtraction assignment
+   columns( D1, indices3 ) %= cs;  // Schur product assignment
+
+   a = columns( D1, indices1 ) * b;  // Dense matrix/sparse vector multiplication
+   \endcode
+
+// \n \section views_column_selections_on_row_major_matrix Column Selections on a Row-Major Matrix
+//
+// Especially noteworthy is that column selections can be created for both row-major and
+// column-major matrices. Whereas the interface of a row-major matrix only allows to traverse a
+// row directly and the interface of a column-major matrix only allows to traverse a column, via
+// views it is possible to traverse a row of a column-major matrix or a column of a row-major
+// matrix. For instance:
+
+   \code
+   blaze::DynamicMatrix<int,blaze::rowMajor> A( 64UL, 32UL );
+   // ... Resizing and initialization
+
+   // Creating a reference to the 1st and 3rd column of a column-major matrix A
+   auto cs = columns( A, { 1UL, 3UL } );
+
+   // Traversing column 0 of the selection, which corresponds to the 1st column of matrix A
+   for( auto it=cs.begin( 0UL ); it!=cs.end( 0UL ); ++it ) {
+      // ...
+   }
+   \endcode
+
+// However, please note that creating a column selection on a matrix stored in a row-major fashion
+// can result in a considerable performance decrease in comparison to a column selection on a
+// matrix with column-major storage format. This is due to the non-contiguous storage of the
+// matrix elements. Therefore care has to be taken in the choice of the most suitable storage
+// order:
+
+   \code
+   // Setup of two row-major matrices
+   blaze::DynamicMatrix<double,blaze::rowMajor> A( 128UL, 128UL );
+   blaze::DynamicMatrix<double,blaze::rowMajor> B( 128UL, 128UL );
+   // ... Resizing and initialization
+
+   // The computation of the 15th, 30th, and 45th column of the multiplication between A and B ...
+   blaze::DynamicMatrix<double,blaze::columnMajor> x = columns( A * B, { 15UL, 30UL, 45UL } );
+
+   // ... is essentially the same as the following computation, which multiplies
+   // A with the 15th, 30th, and 45th column of the row-major matrix B.
+   blaze::DynamicMatrix<double,blaze::columnMajor> x = A * column( B, { 15UL, 30UL, 45UL } );
+   \endcode
+
+// Although \b Blaze performs the resulting matrix/matrix multiplication as efficiently as possible
+// using a column-major storage order for matrix \c A would result in a more efficient evaluation.
+//
+// \n Previous: \ref views_columns &nbsp; &nbsp; Next: \ref views_bands
 */
 //*************************************************************************************************
 
@@ -8539,7 +9909,7 @@
    A = band( A, -1L ) * trans( c );  // Outer product between two vectors
    \endcode
 
-// \n Previous: \ref views_columns &nbsp; &nbsp; Next: \ref arithmetic_operations
+// \n Previous: \ref views_column_selections &nbsp; &nbsp; Next: \ref arithmetic_operations
 */
 //*************************************************************************************************
 

@@ -3,7 +3,7 @@
 //  \file src/mathtest/customvector/AlignedUnpaddedTest.cpp
 //  \brief Source file for the aligned/unpadded CustomVector class test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -2093,13 +2093,13 @@ void AlignedUnpaddedTest::testIterator()
       }
    }
 
-   // Counting the number of elements via Iterator
+   // Counting the number of elements via Iterator (end-begin)
    {
-      test_ = "Iterator subtraction";
+      test_ = "Iterator subtraction (end-begin)";
 
-      const size_t number( end( vec ) - begin( vec ) );
+      const ptrdiff_t number( end( vec ) - begin( vec ) );
 
-      if( number != 4UL ) {
+      if( number != 4L ) {
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
              << " Error: Invalid number of elements detected\n"
@@ -2110,19 +2110,53 @@ void AlignedUnpaddedTest::testIterator()
       }
    }
 
-   // Counting the number of elements via ConstIterator
+   // Counting the number of elements via Iterator (begin-end)
    {
-      test_ = "ConstIterator subtraction";
+      test_ = "Iterator subtraction (begin-end)";
 
-      const size_t number( cend( vec ) - cbegin( vec ) );
+      const ptrdiff_t number( begin( vec ) - end( vec ) );
 
-      if( number != 4UL ) {
+      if( number != -4L ) {
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Invalid number of elements detected\n"
+             << " Details:\n"
+             << "   Number of elements         : " << number << "\n"
+             << "   Expected number of elements: -4\n";
+         throw std::runtime_error( oss.str() );
+      }
+   }
+
+   // Counting the number of elements via ConstIterator (end-begin)
+   {
+      test_ = "ConstIterator subtraction (end-begin)";
+
+      const ptrdiff_t number( cend( vec ) - cbegin( vec ) );
+
+      if( number != 4L ) {
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
              << " Error: Invalid number of elements detected\n"
              << " Details:\n"
              << "   Number of elements         : " << number << "\n"
              << "   Expected number of elements: 4\n";
+         throw std::runtime_error( oss.str() );
+      }
+   }
+
+   // Counting the number of elements via ConstIterator (begin-end)
+   {
+      test_ = "ConstIterator subtraction (begin-end)";
+
+      const ptrdiff_t number( cbegin( vec ) - cend( vec ) );
+
+      if( number != -4L ) {
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Invalid number of elements detected\n"
+             << " Details:\n"
+             << "   Number of elements         : " << number << "\n"
+             << "   Expected number of elements: -4\n";
          throw std::runtime_error( oss.str() );
       }
    }

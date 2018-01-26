@@ -3,7 +3,7 @@
 //  \file blaze/math/adaptors/uppermatrix/UpperProxy.h
 //  \brief Header file for the UpperProxy class
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -140,6 +140,13 @@ class UpperProxy
    template< typename T > inline const UpperProxy& operator*=( const T& value ) const;
    template< typename T > inline const UpperProxy& operator/=( const T& value ) const;
    template< typename T > inline const UpperProxy& operator%=( const T& value ) const;
+   //@}
+   //**********************************************************************************************
+
+   //**Access operators****************************************************************************
+   /*!\name Access operators */
+   //@{
+   inline const UpperProxy* operator->() const noexcept;
    //@}
    //**********************************************************************************************
 
@@ -452,6 +459,27 @@ inline const UpperProxy<MT>& UpperProxy<MT>::operator%=( const T& value ) const
    value_ %= value;
 
    return *this;
+}
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ACCESS OPERATORS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*!\brief Direct access to the accessed matrix element.
+//
+// \return Pointer to the accessed matrix element.
+*/
+template< typename MT >  // Type of the adapted matrix
+inline const UpperProxy<MT>* UpperProxy<MT>::operator->() const noexcept
+{
+   return this;
 }
 //*************************************************************************************************
 

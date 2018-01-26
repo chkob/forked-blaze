@@ -3,7 +3,7 @@
 //  \file blaze/math/views/subvector/SubvectorData.h
 //  \brief Header file for the implementation of the SubvectorData class template
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -214,8 +214,8 @@ struct SubvectorData<I,N>
    //**Utility functions***************************************************************************
    /*!\name Utility functions */
    //@{
-   inline size_t offset() const noexcept;
-   inline size_t size  () const noexcept;
+   static inline constexpr size_t offset() noexcept;
+   static inline constexpr size_t size  () noexcept;
    //@}
    //**********************************************************************************************
 };
@@ -248,7 +248,7 @@ inline SubvectorData<I,N>::SubvectorData( RSAs... args )
 */
 template< size_t I    // Index of the first element
         , size_t N >  // Number of elements
-inline size_t SubvectorData<I,N>::offset() const noexcept
+inline constexpr size_t SubvectorData<I,N>::offset() noexcept
 {
    return I;
 }
@@ -264,7 +264,7 @@ inline size_t SubvectorData<I,N>::offset() const noexcept
 */
 template< size_t I    // Index of the first element
         , size_t N >  // Number of elements
-inline size_t SubvectorData<I,N>::size() const noexcept
+inline constexpr size_t SubvectorData<I,N>::size() noexcept
 {
    return N;
 }

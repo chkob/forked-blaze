@@ -3,7 +3,7 @@
 //  \file blaze/util/MPL.h
 //  \brief Header file for all meta-programming tools
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -53,12 +53,15 @@
 #include <blaze/util/mpl/Minimum.h>
 #include <blaze/util/mpl/Minus.h>
 #include <blaze/util/mpl/Modulus.h>
+#include <blaze/util/mpl/Nand.h>
+#include <blaze/util/mpl/Nor.h>
 #include <blaze/util/mpl/Not.h>
 #include <blaze/util/mpl/Or.h>
 #include <blaze/util/mpl/Plus.h>
 #include <blaze/util/mpl/PtrdiffT.h>
 #include <blaze/util/mpl/SizeT.h>
 #include <blaze/util/mpl/Times.h>
+#include <blaze/util/mpl/Xnor.h>
 #include <blaze/util/mpl/Xor.h>
 
 #endif

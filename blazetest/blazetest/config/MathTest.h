@@ -3,7 +3,7 @@
 //  \file blazetest/config/MathTest.h
 //  \brief General configuration file for the math tests of the blaze test suite
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -547,8 +547,8 @@ typedef double  TypeB;
 //
 // This compilation switch triggers the subvector tests for all test scenarios. In case the
 // subvector tests are activated, all operations resulting in vectors are tested in combination
-// with a subvector operation. The following example gives an impression by means of the vector
-// addition:
+// with a \a subvector() operation. The following example gives an impression by means of the
+// vector addition:
 
    \code
    blaze::DynamicVector<double> a, b, c;
@@ -567,12 +567,36 @@ typedef double  TypeB;
 
 
 //*************************************************************************************************
+/*!\brief Compilation switch for the element selection tests.
+//
+// This compilation switch triggers the element selection tests for all test scenarios. In case
+// the element selection tests are activated, all operations resulting in vectors are tested in
+// combination with an \a elements() operation. The following example demonstrates this by means
+// of the vector addition:
+
+   \code
+   blaze::DynamicVector<double> a, b, c;
+   for( ... )
+      elements( c, ... ) = elements( a + b, ... );  // Element-wise vector addition
+   \endcode
+
+// The following settings are possible:
+//
+//   - 0: The element selection tests are not included in the compilation process and not executed
+//   - 1: The element selection tests are included in the compilation process, but not executed
+//   - 2: The element selection tests are included in the compilation process and executed
+*/
+#define BLAZETEST_MATHTEST_TEST_ELEMENTS_OPERATION 0
+//*************************************************************************************************
+
+
+//*************************************************************************************************
 /*!\brief Compilation switch for the submatrix tests.
 //
 // This compilation switch triggers the submatrix tests for all test scenarios. In case the
 // submatrix tests are activated, all operations resulting in matrices are tested in combination
-// with a submatrix operation. The following example gives an impression by means of the matrix
-// addition:
+// with a \a submatrix() operation. The following example gives an impression by means of the
+// matrix addition:
 
    \code
    blaze::DynamicMatrix<double> A, B, C;
@@ -594,9 +618,9 @@ typedef double  TypeB;
 //*************************************************************************************************
 /*!\brief Compilation switch for the row tests.
 //
-// This compilation switch triggers the row tests for all test scenarios. In case the row
-// tests are activated, all operations resulting in matrices are tested in combination with
-// a row operation. The following example demonstrates this by means of the matrix addition:
+// This compilation switch triggers the row tests for all test scenarios. In case the row tests
+// are activated, all operations resulting in matrices are tested in combination with a \a row()
+// operation. The following example demonstrates this by means of the matrix addition:
 
    \code
    blaze::DynamicMatrix<double> A, B, C;
@@ -615,11 +639,35 @@ typedef double  TypeB;
 
 
 //*************************************************************************************************
+/*!\brief Compilation switch for the row selection tests.
+//
+// This compilation switch triggers the row selection tests for all test scenarios. In case
+// the row selection tests are activated, all operations resulting in matrices are tested in
+// combination with a \a rows() operation. The following example demonstrates this by means
+// of the matrix addition:
+
+   \code
+   blaze::DynamicMatrix<double> A, B, C;
+   for( ... )
+      rows( C, ... ) = rows( A + B, ... );  // Rows-wise matrix addition
+   \endcode
+
+// The following settings are possible:
+//
+//   - 0: The row selection tests are not included in the compilation process and not executed
+//   - 1: The row selection tests are included in the compilation process, but not executed
+//   - 2: The row selection tests are included in the compilation process and executed
+*/
+#define BLAZETEST_MATHTEST_TEST_ROWS_OPERATION 0
+//*************************************************************************************************
+
+
+//*************************************************************************************************
 /*!\brief Compilation switch for the column tests.
 //
 // This compilation switch triggers the column tests for all test scenarios. In case the column
-// tests are activated, all operations resulting in matrices are tested in combination with
-// a column operation. The following example demonstrates this by means of the matrix addition:
+// tests are activated, all operations resulting in matrices are tested in combination with a
+// \a column() operation. The following example demonstrates this by means of the matrix addition:
 
    \code
    blaze::DynamicMatrix<double> A, B, C;
@@ -638,11 +686,35 @@ typedef double  TypeB;
 
 
 //*************************************************************************************************
+/*!\brief Compilation switch for the column selection tests.
+//
+// This compilation switch triggers the column selection tests for all test scenarios. In case
+// the column selection tests are activated, all operations resulting in matrices are tested in
+// combination with a \a columns() operation. The following example demonstrates this by means
+// of the matrix addition:
+
+   \code
+   blaze::DynamicMatrix<double> A, B, C;
+   for( ... )
+      columns( C, ... ) = columns( A + B, ... );  // Columns-wise matrix addition
+   \endcode
+
+// The following settings are possible:
+//
+//   - 0: The column selection tests are not included in the compilation process and not executed
+//   - 1: The column selection tests are included in the compilation process, but not executed
+//   - 2: The column selection tests are included in the compilation process and executed
+*/
+#define BLAZETEST_MATHTEST_TEST_COLUMNS_OPERATION 0
+//*************************************************************************************************
+
+
+//*************************************************************************************************
 /*!\brief Compilation switch for the band tests.
 //
-// This compilation switch triggers the band tests for all test scenarios. In case the band
-// tests are activated, all operations resulting in matrices are tested in combination with
-// a band operation. The following example demonstrates this by means of the matrix addition:
+// This compilation switch triggers the band tests for all test scenarios. In case the band tests
+// are activated, all operations resulting in matrices are tested in combination with a \a band()
+// operation. The following example demonstrates this by means of the matrix addition:
 
    \code
    blaze::DynamicMatrix<double> A, B, C;

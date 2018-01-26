@@ -3,7 +3,7 @@
 //  \file blaze/math/proxy/SparseVectorProxy.h
 //  \brief Header file for the SparseVectorProxy class
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -698,7 +698,7 @@ inline void SparseVectorProxy<PT,VT>::erase( Iterator first, Iterator last, Pred
 // is found, the function returns an iterator to the element. Otherwise an iterator just past
 // the last non-zero element of the sparse vector (the end() iterator) is returned. Note that
 // the returned sparse vector iterator is subject to invalidation due to inserting operations
-// via the subscript operator or the insert() function!
+// via the subscript operator, the set() function or the insert() function!
 */
 template< typename PT    // Type of the proxy
         , typename VT >  // Type of the sparse vector
@@ -719,8 +719,8 @@ inline typename SparseVectorProxy<PT,VT>::Iterator
 // This function returns an iterator to the first element with an index not less then the given
 // index. In combination with the upperBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse vector iterator
-// is subject to invalidation due to inserting operations via the subscript operator or the
-// insert() function!
+// is subject to invalidation due to inserting operations via the subscript operator, the set()
+// function or the insert() function!
 */
 template< typename PT    // Type of the proxy
         , typename VT >  // Type of the sparse vector
@@ -741,8 +741,8 @@ inline typename SparseVectorProxy<PT,VT>::Iterator
 // This function returns an iterator to the first element with an index greater then the given
 // index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned sparse vector iterator
-// is subject to invalidation due to inserting operations via the subscript operator or the
-// insert() function!
+// is subject to invalidation due to inserting operations via the subscript operator, the set()
+// function or the insert() function!
 */
 template< typename PT    // Type of the proxy
         , typename VT >  // Type of the sparse vector

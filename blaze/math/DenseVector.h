@@ -3,7 +3,7 @@
 //  \file blaze/math/DenseVector.h
 //  \brief Header file for all basic DenseVector functionality
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -51,6 +51,7 @@
 #include <blaze/math/expressions/DVecDVecSubExpr.h>
 #include <blaze/math/expressions/DVecEvalExpr.h>
 #include <blaze/math/expressions/DVecMapExpr.h>
+#include <blaze/math/expressions/DVecNormExpr.h>
 #include <blaze/math/expressions/DVecScalarDivExpr.h>
 #include <blaze/math/expressions/DVecScalarMultExpr.h>
 #include <blaze/math/expressions/DVecSerialExpr.h>

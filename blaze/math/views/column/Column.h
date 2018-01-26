@@ -3,7 +3,7 @@
 //  \file blaze/math/views/column/Column.h
 //  \brief Column documentation
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -324,7 +324,7 @@
 
    // ... is essentially the same as the following computation, which multiplies
    // A with the 15th column of the row-major matrix B.
-   blaze::DynamicVector<double,blaze::rowVector> x = A * column( B, 15UL );
+   blaze::DynamicVector<double,blaze::columnVector> x = A * column( B, 15UL );
    \endcode
 
 // Although Blaze performs the resulting matrix/vector multiplication as efficiently as possible

@@ -3,7 +3,7 @@
 //  \file blaze/util/mpl/And.h
 //  \brief Header file for the And class template
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -54,11 +54,11 @@ namespace blaze {
 //=================================================================================================
 
 //*************************************************************************************************
-/*!\brief Compile time logical and evaluation.
+/*!\brief Compile time logical 'and' evaluation.
 // \ingroup mpl
 //
-// The And alias declaration performs at compile time a logical and ('&&') evaluation of at least
-// two compile time conditions:
+// The And alias declaration performs at compile time a logical 'and' ('&&') evaluation of at
+// least two compile time conditions:
 
    \code
    using namespace blaze;

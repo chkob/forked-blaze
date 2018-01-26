@@ -2,7 +2,7 @@
 #
 #  Makefile for the mathtest module of the Blaze test suite
 #
-#  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+#  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 #
 #  This file is part of the Blaze library. You can redistribute it and/or modify it under
 #  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -43,7 +43,7 @@ all: functions simd blas lapack typetraits \
      lowermatrix unilowermatrix strictlylowermatrix \
      uppermatrix uniuppermatrix strictlyuppermatrix \
      diagonalmatrix identitymatrix \
-     subvector submatrix row column band \
+     subvector elements submatrix row rows column columns band \
      dvecdvecadd dvecsvecadd svecdvecadd svecsvecadd \
      dvecdvecsub dvecsvecsub svecdvecsub svecsvecsub \
      dvecdvecmult dvecsvecmult svecdvecmult svecsvecmult \
@@ -74,7 +74,7 @@ noop: functions simd blas lapack typetraits \
       lowermatrix unilowermatrix strictlylowermatrix \
       uppermatrix uniuppermatrix strictlyuppermatrix \
       diagonalmatrix identitymatrix \
-      subvector submatrix row column band \
+      subvector elements submatrix row rows column columns band \
       determinant lu llh qr rq ql lq inversion eigen svd \
       vectorserializer matrixserializer
 
@@ -240,6 +240,11 @@ subvector:
 	@echo "Building the Subvector tests..."
 	@$(MAKE) --no-print-directory -C ./subvector $(MAKECMDGOALS)
 
+elements:
+	@echo
+	@echo "Building the Elements tests..."
+	@$(MAKE) --no-print-directory -C ./elements $(MAKECMDGOALS)
+
 submatrix:
 	@echo
 	@echo "Building the Submatrix tests..."
@@ -250,10 +255,20 @@ row:
 	@echo "Building the Row tests..."
 	@$(MAKE) --no-print-directory -C ./row $(MAKECMDGOALS)
 
+rows:
+	@echo
+	@echo "Building the Rows tests..."
+	@$(MAKE) --no-print-directory -C ./rows $(MAKECMDGOALS)
+
 column:
 	@echo
 	@echo "Building the Column tests..."
 	@$(MAKE) --no-print-directory -C ./column $(MAKECMDGOALS)
+
+columns:
+	@echo
+	@echo "Building the Columns tests..."
+	@$(MAKE) --no-print-directory -C ./columns $(MAKECMDGOALS)
 
 band:
 	@echo
@@ -625,9 +640,12 @@ reset:
 	@$(MAKE) --no-print-directory -C ./diagonalmatrix reset
 	@$(MAKE) --no-print-directory -C ./identitymatrix reset
 	@$(MAKE) --no-print-directory -C ./subvector reset
+	@$(MAKE) --no-print-directory -C ./elements reset
 	@$(MAKE) --no-print-directory -C ./submatrix reset
 	@$(MAKE) --no-print-directory -C ./row reset
+	@$(MAKE) --no-print-directory -C ./rows reset
 	@$(MAKE) --no-print-directory -C ./column reset
+	@$(MAKE) --no-print-directory -C ./columns reset
 	@$(MAKE) --no-print-directory -C ./band reset
 	@$(MAKE) --no-print-directory -C ./dvecdvecadd reset
 	@$(MAKE) --no-print-directory -C ./dvecsvecadd reset
@@ -729,9 +747,12 @@ clean:
 	@$(MAKE) --no-print-directory -C ./diagonalmatrix clean
 	@$(MAKE) --no-print-directory -C ./identitymatrix clean
 	@$(MAKE) --no-print-directory -C ./subvector clean
+	@$(MAKE) --no-print-directory -C ./elements clean
 	@$(MAKE) --no-print-directory -C ./submatrix clean
 	@$(MAKE) --no-print-directory -C ./row clean
+	@$(MAKE) --no-print-directory -C ./rows clean
 	@$(MAKE) --no-print-directory -C ./column clean
+	@$(MAKE) --no-print-directory -C ./columns clean
 	@$(MAKE) --no-print-directory -C ./band clean
 	@$(MAKE) --no-print-directory -C ./dvecdvecadd clean
 	@$(MAKE) --no-print-directory -C ./dvecsvecadd clean
@@ -811,7 +832,7 @@ clean:
         lowermatrix unilowermatrix strictlylowermatrix \
         uppermatrix uniuppermatrix strictlyuppermatrix \
         diagonalmatrix identitymatrix \
-        subvector submatrix row column band \
+        subvector elements submatrix row rows column columns band \
         dvecdvecadd dvecsvecadd svecdvecadd svecsvecadd \
         dvecdvecsub dvecsvecsub svecdvecsub svecsvecsub \
         dvecdvecmult dvecsvecmult svecdvecmult svecsvecmult \

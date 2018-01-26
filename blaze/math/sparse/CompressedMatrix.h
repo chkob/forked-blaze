@@ -3,7 +3,7 @@
 //  \file blaze/math/sparse/CompressedMatrix.h
 //  \brief Implementation of a compressed MxN matrix
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -298,6 +298,14 @@ class CompressedMatrix
    /*! \endcond */
    //**********************************************************************************************
 
+   //**Private class Uninitialized*****************************************************************
+   /*! \cond BLAZE_INTERNAL */
+   /*!\brief Auxiliary helper class for the construction of compressed matrices.
+   */
+   struct Uninitialized {};
+   /*! \endcond */
+   //**********************************************************************************************
+
  public:
    //**Type definitions****************************************************************************
    using This           = CompressedMatrix<Type,SO>;   //!< Type of this CompressedMatrix instance.
@@ -394,12 +402,6 @@ class CompressedMatrix
    template< typename MT, bool SO2 > inline CompressedMatrix& operator-=( const Matrix<MT,SO2>& rhs );
    template< typename MT, bool SO2 > inline CompressedMatrix& operator%=( const DenseMatrix<MT,SO2>&  rhs );
    template< typename MT, bool SO2 > inline CompressedMatrix& operator%=( const SparseMatrix<MT,SO2>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, CompressedMatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, CompressedMatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -492,6 +494,13 @@ class CompressedMatrix
    //**********************************************************************************************
 
  private:
+   //**Constructors********************************************************************************
+   /*!\name Constructors */
+   //@{
+   explicit inline CompressedMatrix( size_t m, size_t n, Uninitialized );
+   //@}
+   //**********************************************************************************************
+
    //**Utility functions***************************************************************************
    /*!\name Utility functions */
    //@{
@@ -582,13 +591,9 @@ inline CompressedMatrix<Type,SO>::CompressedMatrix()
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline CompressedMatrix<Type,SO>::CompressedMatrix( size_t m, size_t n )
-   : m_       ( m )                     // The current number of rows of the compressed matrix
-   , n_       ( n )                     // The current number of columns of the compressed matrix
-   , capacity_( m )                     // The current capacity of the pointer array
-   , begin_( new Iterator[2UL*m+2UL] )  // Pointers to the first non-zero element of each row
-   , end_  ( begin_+(m+1UL) )           // Pointers one past the last non-zero element of each row
+   : CompressedMatrix( m, n, Uninitialized() )
 {
-   for( size_t i=0UL; i<2UL*m_+2UL; ++i )
+   for( size_t i=1UL; i<2UL*m_+2UL; ++i )
       begin_[i] = nullptr;
 }
 //*************************************************************************************************
@@ -606,11 +611,7 @@ inline CompressedMatrix<Type,SO>::CompressedMatrix( size_t m, size_t n )
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline CompressedMatrix<Type,SO>::CompressedMatrix( size_t m, size_t n, size_t nonzeros )
-   : m_       ( m )                     // The current number of rows of the compressed matrix
-   , n_       ( n )                     // The current number of columns of the compressed matrix
-   , capacity_( m )                     // The current capacity of the pointer array
-   , begin_( new Iterator[2UL*m+2UL] )  // Pointers to the first non-zero element of each row
-   , end_  ( begin_+(m+1UL) )           // Pointers one past the last non-zero element of each row
+   : CompressedMatrix( m, n, Uninitialized() )
 {
    begin_[0UL] = allocate<Element>( nonzeros );
    for( size_t i=1UL; i<(2UL*m_+1UL); ++i )
@@ -634,11 +635,7 @@ inline CompressedMatrix<Type,SO>::CompressedMatrix( size_t m, size_t n, size_t n
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 CompressedMatrix<Type,SO>::CompressedMatrix( size_t m, size_t n, const std::vector<size_t>& nonzeros )
-   : m_       ( m )                      // The current number of rows of the compressed matrix
-   , n_       ( n )                      // The current number of columns of the compressed matrix
-   , capacity_( m )                      // The current capacity of the pointer array
-   , begin_( new Iterator[2UL*m_+2UL] )  // Pointers to the first non-zero element of each row
-   , end_  ( begin_+(m_+1UL) )           // Pointers one past the last non-zero element of each row
+   : CompressedMatrix( m, n, Uninitialized() )
 {
    BLAZE_USER_ASSERT( nonzeros.size() == m, "Size of capacity vector and number of rows don't match" );
 
@@ -706,11 +703,7 @@ inline CompressedMatrix<Type,SO>::CompressedMatrix( initializer_list< initialize
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline CompressedMatrix<Type,SO>::CompressedMatrix( const CompressedMatrix& sm )
-   : m_       ( sm.m_ )                  // The current number of rows of the compressed matrix
-   , n_       ( sm.n_ )                  // The current number of columns of the compressed matrix
-   , capacity_( sm.m_ )                  // The current capacity of the pointer array
-   , begin_( new Iterator[2UL*m_+2UL] )  // Pointers to the first non-zero element of each row
-   , end_  ( begin_+(m_+1UL) )           // Pointers one past the last non-zero element of each row
+   : CompressedMatrix( sm.m_, sm.n_, Uninitialized() )
 {
    const size_t nonzeros( sm.nonZeros() );
 
@@ -781,6 +774,26 @@ inline CompressedMatrix<Type,SO>::CompressedMatrix( const SparseMatrix<MT,SO2>& 
    using blaze::assign;
 
    assign( *this, ~sm );
+}
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*!\brief Constructor for an uninitialized matrix of size \f$ M \times N \f$.
+//
+// \param m The number of rows of the matrix.
+// \param n The number of columns of the matrix.
+*/
+template< typename Type  // Data type of the matrix
+        , bool SO >      // Storage order
+inline CompressedMatrix<Type,SO>::CompressedMatrix( size_t m, size_t n, Uninitialized )
+   : m_       ( m )                     // The current number of rows of the compressed matrix
+   , n_       ( n )                     // The current number of columns of the compressed matrix
+   , capacity_( m )                     // The current capacity of the pointer array
+   , begin_( new Iterator[2UL*m+2UL] )  // Pointers to the first non-zero element of each row
+   , end_  ( begin_+(m+1UL) )           // Pointers one past the last non-zero element of each row
+{
+   begin_[0] = nullptr;
 }
 //*************************************************************************************************
 
@@ -1132,6 +1145,8 @@ template< typename Type  // Data type of the matrix
 inline CompressedMatrix<Type,SO>&
    CompressedMatrix<Type,SO>::operator=( const CompressedMatrix& rhs )
 {
+   using std::swap;
+
    if( &rhs == this ) return *this;
 
    const size_t nonzeros( rhs.nonZeros() );
@@ -1148,7 +1163,7 @@ inline CompressedMatrix<Type,SO>&
       }
       newEnd[rhs.m_] = newBegin[0UL]+nonzeros;
 
-      std::swap( begin_, newBegin );
+      swap( begin_, newBegin );
       end_ = newEnd;
       capacity_ = rhs.m_;
 
@@ -1397,70 +1412,6 @@ inline CompressedMatrix<Type,SO>&
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*!\brief Multiplication assignment operator for the multiplication between a compressed matrix
-//        and a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the compressed matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , bool SO >         // Storage order
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, CompressedMatrix<Type,SO> >&
-   CompressedMatrix<Type,SO>::operator*=( Other rhs )
-{
-   for( size_t i=0UL; i<m_; ++i ) {
-      const Iterator last( end(i) );
-      for( Iterator element=begin(i); element!=last; ++element )
-         element->value_ *= rhs;
-   }
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Division assignment operator for the division of a compressed matrix by a scalar value
-//        (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the matrix.
-*/
-template< typename Type     // Data type of the matrix
-        , bool SO >         // Storage order
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, CompressedMatrix<Type,SO> >&
-   CompressedMatrix<Type,SO>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   using DT  = DivTrait_<Type,Other>;
-   using Tmp = If_< IsNumeric<DT>, DT, Other >;
-
-   // Depending on the two involved data types, an integer division is applied or a
-   // floating point division is selected.
-   if( IsNumeric<DT>::value && IsFloatingPoint<DT>::value ) {
-      const Tmp tmp( Tmp(1)/static_cast<Tmp>( rhs ) );
-      for( size_t i=0UL; i<m_; ++i ) {
-         const Iterator last( end(i) );
-         for( Iterator element=begin(i); element!=last; ++element )
-            element->value_ *= tmp;
-      }
-   }
-   else {
-      for( size_t i=0UL; i<m_; ++i ) {
-         const Iterator last( end(i) );
-         for( Iterator element=begin(i); element!=last; ++element )
-            element->value_ /= rhs;
-      }
-   }
-
-   return *this;
-}
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -1648,6 +1599,8 @@ template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 void CompressedMatrix<Type,SO>::resize( size_t m, size_t n, bool preserve )
 {
+   using std::swap;
+
    BLAZE_INTERNAL_ASSERT( end_ >= begin_, "Invalid internal storage detected" );
    BLAZE_INTERNAL_ASSERT( begin_ == nullptr || size_t( end_ - begin_ ) == capacity_ + 1UL, "Invalid storage setting detected" );
 
@@ -1688,7 +1641,7 @@ void CompressedMatrix<Type,SO>::resize( size_t m, size_t n, bool preserve )
 
       newEnd[m] = end_[m_];
 
-      std::swap( newBegin, begin_ );
+      swap( newBegin, begin_ );
       delete[] newBegin;
       end_ = newEnd;
       capacity_ = m;
@@ -1767,6 +1720,8 @@ template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 void CompressedMatrix<Type,SO>::reserve( size_t i, size_t nonzeros )
 {
+   using std::swap;
+
    BLAZE_USER_ASSERT( i < rows(), "Invalid row access index" );
 
    BLAZE_INTERNAL_ASSERT( end_ >= begin_, "Invalid internal storage detected" );
@@ -1802,7 +1757,7 @@ void CompressedMatrix<Type,SO>::reserve( size_t i, size_t nonzeros )
 
       BLAZE_INTERNAL_ASSERT( newBegin[m_] == newEnd[m_], "Invalid pointer calculations" );
 
-      std::swap( newBegin, begin_ );
+      swap( newBegin, begin_ );
       deallocate( newBegin[0UL] );
       delete[] newBegin;
       end_ = newEnd;
@@ -1897,11 +1852,13 @@ template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 inline void CompressedMatrix<Type,SO>::swap( CompressedMatrix& sm ) noexcept
 {
-   std::swap( m_, sm.m_ );
-   std::swap( n_, sm.n_ );
-   std::swap( capacity_, sm.capacity_ );
-   std::swap( begin_, sm.begin_ );
-   std::swap( end_  , sm.end_   );
+   using std::swap;
+
+   swap( m_, sm.m_ );
+   swap( n_, sm.n_ );
+   swap( capacity_, sm.capacity_ );
+   swap( begin_, sm.begin_ );
+   swap( end_  , sm.end_   );
 }
 //*************************************************************************************************
 
@@ -1938,6 +1895,8 @@ template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
 void CompressedMatrix<Type,SO>::reserveElements( size_t nonzeros )
 {
+   using std::swap;
+
    Iterator* newBegin = new Iterator[2UL*capacity_+2UL];
    Iterator* newEnd   = newBegin+capacity_+1UL;
 
@@ -1951,7 +1910,7 @@ void CompressedMatrix<Type,SO>::reserveElements( size_t nonzeros )
 
    newEnd[m_] = newBegin[0UL]+nonzeros;
 
-   std::swap( newBegin, begin_ );
+   swap( newBegin, begin_ );
    end_ = newEnd;
 
    if( newBegin != nullptr ) {
@@ -2084,6 +2043,8 @@ template< typename Type  // Data type of the matrix
 typename CompressedMatrix<Type,SO>::Iterator
    CompressedMatrix<Type,SO>::insert( Iterator pos, size_t i, size_t j, const Type& value )
 {
+   using std::swap;
+
    if( begin_[i+1UL] - end_[i] != 0 ) {
       std::move_backward( pos, end_[i], castUp( end_[i]+1UL ) );
       pos->value_ = value;
@@ -2135,7 +2096,7 @@ typename CompressedMatrix<Type,SO>::Iterator
       tmp->index_ = j;
       std::move( pos, end_[m_-1UL], castUp( tmp+1UL ) );
 
-      std::swap( newBegin, begin_ );
+      swap( newBegin, begin_ );
       end_ = newEnd;
       deallocate( newBegin[0UL] );
       delete[] newBegin;
@@ -2435,8 +2396,8 @@ inline void CompressedMatrix<Type,SO>::erase( size_t i, Iterator first, Iterator
 // In case the element is found, the function returns an row/column iterator to the element.
 // Otherwise an iterator just past the last non-zero element of row \a i or column \a j (the
 // end() iterator) is returned. Note that the returned compressed matrix iterator is subject
-// to invalidation due to inserting operations via the function call operator or the insert()
-// function!
+// to invalidation due to inserting operations via the function call operator, the set()
+// function or the insert() function!
 */
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
@@ -2460,8 +2421,8 @@ inline typename CompressedMatrix<Type,SO>::Iterator
 // In case the element is found, the function returns an row/column iterator to the element.
 // Otherwise an iterator just past the last non-zero element of row \a i or column \a j (the
 // end() iterator) is returned. Note that the returned compressed matrix iterator is subject
-// to invalidation due to inserting operations via the function call operator or the insert()
-// function!
+// to invalidation due to inserting operations via the function call operator, the set()
+// function or the insert() function!
 */
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
@@ -2488,8 +2449,8 @@ inline typename CompressedMatrix<Type,SO>::ConstIterator
 // returns a column iterator to the first element with an index not less then the given row
 // index. In combination with the upperBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned compressed matrix
-// iterator is subject to invalidation due to inserting operations via the function call operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the function call operator,
+// the set() function or the insert() function!
 */
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
@@ -2513,8 +2474,8 @@ inline typename CompressedMatrix<Type,SO>::Iterator
 // returns a column iterator to the first element with an index not less then the given row
 // index. In combination with the upperBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned compressed matrix
-// iterator is subject to invalidation due to inserting operations via the function call operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the function call operator,
+// the set() function or the insert() function!
 */
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
@@ -2541,10 +2502,10 @@ inline typename CompressedMatrix<Type,SO>::ConstIterator
 // In case of a row-major matrix, this function returns a row iterator to the first element with
 // an index greater then the given column index. In case of a column-major matrix, the function
 // returns a column iterator to the first element with an index greater then the given row
-// index. In combination with the upperBound() function this function can be used to create a
+// index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned compressed matrix
-// iterator is subject to invalidation due to inserting operations via the function call operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the function call operator,
+// the set() function or or the insert() function!
 */
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
@@ -2566,10 +2527,10 @@ inline typename CompressedMatrix<Type,SO>::Iterator
 // In case of a row-major matrix, this function returns a row iterator to the first element with
 // an index greater then the given column index. In case of a column-major matrix, the function
 // returns a column iterator to the first element with an index greater then the given row
-// index. In combination with the upperBound() function this function can be used to create a
+// index. In combination with the lowerBound() function this function can be used to create a
 // pair of iterators specifying a range of indices. Note that the returned compressed matrix
-// iterator is subject to invalidation due to inserting operations via the function call operator
-// or the insert() function!
+// iterator is subject to invalidation due to inserting operations via the function call operator,
+// the set() function or the insert() function!
 */
 template< typename Type  // Data type of the matrix
         , bool SO >      // Storage order
@@ -3100,6 +3061,14 @@ class CompressedMatrix<Type,true>
    /*! \endcond */
    //**********************************************************************************************
 
+   //**Private class Uninitialized*****************************************************************
+   /*! \cond BLAZE_INTERNAL */
+   /*!\brief Auxiliary helper class for the construction of compressed matrices.
+   */
+   struct Uninitialized {};
+   /*! \endcond */
+   //**********************************************************************************************
+
  public:
    //**Type definitions****************************************************************************
    using This           = CompressedMatrix<Type,true>;   //!< Type of this CompressedMatrix instance.
@@ -3174,12 +3143,12 @@ class CompressedMatrix<Type,true>
    inline ConstReference operator()( size_t i, size_t j ) const noexcept;
    inline Reference      at( size_t i, size_t j );
    inline ConstReference at( size_t i, size_t j ) const;
-   inline Iterator       begin ( size_t i ) noexcept;
-   inline ConstIterator  begin ( size_t i ) const noexcept;
-   inline ConstIterator  cbegin( size_t i ) const noexcept;
-   inline Iterator       end   ( size_t i ) noexcept;
-   inline ConstIterator  end   ( size_t i ) const noexcept;
-   inline ConstIterator  cend  ( size_t i ) const noexcept;
+   inline Iterator       begin ( size_t j ) noexcept;
+   inline ConstIterator  begin ( size_t j ) const noexcept;
+   inline ConstIterator  cbegin( size_t j ) const noexcept;
+   inline Iterator       end   ( size_t j ) noexcept;
+   inline ConstIterator  end   ( size_t j ) const noexcept;
+   inline ConstIterator  cend  ( size_t j ) const noexcept;
    //@}
    //**********************************************************************************************
 
@@ -3196,12 +3165,6 @@ class CompressedMatrix<Type,true>
    template< typename MT, bool SO > inline CompressedMatrix& operator-=( const Matrix<MT,SO>& rhs );
    template< typename MT, bool SO > inline CompressedMatrix& operator%=( const DenseMatrix<MT,SO>&  rhs );
    template< typename MT, bool SO > inline CompressedMatrix& operator%=( const SparseMatrix<MT,SO>& rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, CompressedMatrix >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_< IsNumeric<Other>, CompressedMatrix >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -3248,7 +3211,7 @@ class CompressedMatrix<Type,true>
    inline void erase( Pred predicate );
 
    template< typename Pred >
-   inline void erase( size_t i, Iterator first, Iterator last, Pred predicate );
+   inline void erase( size_t j, Iterator first, Iterator last, Pred predicate );
    //@}
    //**********************************************************************************************
 
@@ -3294,6 +3257,13 @@ class CompressedMatrix<Type,true>
    //**********************************************************************************************
 
  private:
+   //**Constructors********************************************************************************
+   /*!\name Constructors */
+   //@{
+   explicit inline CompressedMatrix( size_t m, size_t n, Uninitialized );
+   //@}
+   //**********************************************************************************************
+
    //**Utility functions***************************************************************************
    /*!\name Utility functions */
    //@{
@@ -3386,13 +3356,9 @@ inline CompressedMatrix<Type,true>::CompressedMatrix()
 */
 template< typename Type >  // Data type of the matrix
 inline CompressedMatrix<Type,true>::CompressedMatrix( size_t m, size_t n )
-   : m_       ( m )                     // The current number of rows of the compressed matrix
-   , n_       ( n )                     // The current number of columns of the compressed matrix
-   , capacity_( n )                     // The current capacity of the pointer array
-   , begin_( new Iterator[2UL*n+2UL] )  // Pointers to the first non-zero element of each column
-   , end_  ( begin_+(n+1UL) )           // Pointers one past the last non-zero element of each column
+   : CompressedMatrix( m, n, Uninitialized() )
 {
-   for( size_t j=0UL; j<2UL*n_+2UL; ++j )
+   for( size_t j=1UL; j<2UL*n_+2UL; ++j )
       begin_[j] = nullptr;
 }
 /*! \endcond */
@@ -3411,11 +3377,7 @@ inline CompressedMatrix<Type,true>::CompressedMatrix( size_t m, size_t n )
 */
 template< typename Type >  // Data type of the matrix
 inline CompressedMatrix<Type,true>::CompressedMatrix( size_t m, size_t n, size_t nonzeros )
-   : m_       ( m )                     // The current number of rows of the compressed matrix
-   , n_       ( n )                     // The current number of columns of the compressed matrix
-   , capacity_( n )                     // The current capacity of the pointer array
-   , begin_( new Iterator[2UL*n+2UL] )  // Pointers to the first non-zero element of each column
-   , end_  ( begin_+(n+1UL) )           // Pointers one past the last non-zero element of each column
+   : CompressedMatrix( m, n, Uninitialized() )
 {
    begin_[0UL] = allocate<Element>( nonzeros );
    for( size_t j=1UL; j<(2UL*n_+1UL); ++j )
@@ -3439,11 +3401,7 @@ inline CompressedMatrix<Type,true>::CompressedMatrix( size_t m, size_t n, size_t
 */
 template< typename Type >  // Data type of the matrix
 CompressedMatrix<Type,true>::CompressedMatrix( size_t m, size_t n, const std::vector<size_t>& nonzeros )
-   : m_       ( m )                      // The current number of rows of the compressed matrix
-   , n_       ( n )                      // The current number of columns of the compressed matrix
-   , capacity_( n )                      // The current capacity of the pointer array
-   , begin_( new Iterator[2UL*n_+2UL] )  // Pointers to the first non-zero element of each column
-   , end_  ( begin_+(n_+1UL) )           // Pointers one past the last non-zero element of each column
+   : CompressedMatrix( m, n, Uninitialized() )
 {
    BLAZE_USER_ASSERT( nonzeros.size() == n, "Size of capacity vector and number of columns don't match" );
 
@@ -3518,11 +3476,7 @@ inline CompressedMatrix<Type,true>::CompressedMatrix( initializer_list< initiali
 */
 template< typename Type >  // Data type of the matrix
 inline CompressedMatrix<Type,true>::CompressedMatrix( const CompressedMatrix& sm )
-   : m_       ( sm.m_ )                     // The current number of rows of the compressed matrix
-   , n_       ( sm.n_ )                     // The current number of columns of the compressed matrix
-   , capacity_( sm.n_ )                     // The current capacity of the pointer array
-   , begin_   ( new Iterator[2UL*n_+2UL] )  // Pointers to the first non-zero element of each column
-   , end_     ( begin_+(n_+1UL) )           // Pointers one past the last non-zero element of each column
+   : CompressedMatrix( sm.m_, sm.n_, Uninitialized() )
 {
    const size_t nonzeros( sm.nonZeros() );
 
@@ -3596,6 +3550,27 @@ inline CompressedMatrix<Type,true>::CompressedMatrix( const SparseMatrix<MT,SO>&
    using blaze::assign;
 
    assign( *this, ~sm );
+}
+/*! \endcond */
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+/*!\brief Constructor for an uninitialized matrix of size \f$ M \times N \f$.
+//
+// \param m The number of rows of the matrix.
+// \param n The number of columns of the matrix.
+*/
+template< typename Type >  // Data type of the matrix
+inline CompressedMatrix<Type,true>::CompressedMatrix( size_t m, size_t n, Uninitialized )
+   : m_       ( m )                     // The current number of rows of the compressed matrix
+   , n_       ( n )                     // The current number of columns of the compressed matrix
+   , capacity_( n )                     // The current capacity of the pointer array
+   , begin_( new Iterator[2UL*n+2UL] )  // Pointers to the first non-zero element of each column
+   , end_  ( begin_+(n+1UL) )           // Pointers one past the last non-zero element of each column
+{
+   begin_[0UL] = nullptr;
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -3935,6 +3910,8 @@ template< typename Type >  // Data type of the matrix
 inline CompressedMatrix<Type,true>&
    CompressedMatrix<Type,true>::operator=( const CompressedMatrix& rhs )
 {
+   using std::swap;
+
    if( &rhs == this ) return *this;
 
    const size_t nonzeros( rhs.nonZeros() );
@@ -3951,7 +3928,7 @@ inline CompressedMatrix<Type,true>&
       }
       newEnd[rhs.n_] = newBegin[0UL]+nonzeros;
 
-      std::swap( begin_, newBegin );
+      swap( begin_, newBegin );
       end_ = newEnd;
       capacity_ = rhs.n_;
 
@@ -4207,72 +4184,6 @@ inline CompressedMatrix<Type,true>&
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a compressed matrix and
-// \brief a scalar value (\f$ A*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the compressed matrix.
-*/
-template< typename Type >   // Data type of the matrix
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, CompressedMatrix<Type,true> >&
-   CompressedMatrix<Type,true>::operator*=( Other rhs )
-{
-   for( size_t j=0UL; j<n_; ++j ) {
-      const Iterator last( end(j) );
-      for( Iterator element=begin(j); element!=last; ++element )
-         element->value_ *= rhs;
-   }
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a compressed matrix by a scalar value
-// \brief (\f$ A/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the matrix.
-*/
-template< typename Type >   // Data type of the matrix
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_< IsNumeric<Other>, CompressedMatrix<Type,true> >&
-   CompressedMatrix<Type,true>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   using DT  = DivTrait_<Type,Other>;
-   using Tmp = If_< IsNumeric<DT>, DT, Other >;
-
-   // Depending on the two involved data types, an integer division is applied or a
-   // floating point division is selected.
-   if( IsNumeric<DT>::value && IsFloatingPoint<DT>::value ) {
-      const Tmp tmp( Tmp(1)/static_cast<Tmp>( rhs ) );
-      for( size_t j=0UL; j<n_; ++j ) {
-         const Iterator last( end(j) );
-         for( Iterator element=begin(j); element!=last; ++element )
-            element->value_ *= tmp;
-      }
-   }
-   else {
-      for( size_t j=0UL; j<n_; ++j ) {
-         const Iterator last( end(j) );
-         for( Iterator element=begin(j); element!=last; ++element )
-            element->value_ /= rhs;
-      }
-   }
-
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -4457,6 +4368,8 @@ inline void CompressedMatrix<Type,true>::clear()
 template< typename Type >  // Data type of the matrix
 void CompressedMatrix<Type,true>::resize( size_t m, size_t n, bool preserve )
 {
+   using std::swap;
+
    BLAZE_INTERNAL_ASSERT( end_ >= begin_, "Invalid internal storage detected" );
    BLAZE_INTERNAL_ASSERT( begin_ == nullptr || size_t( end_ - begin_ ) == capacity_ + 1UL, "Invalid storage setting detected" );
 
@@ -4497,7 +4410,7 @@ void CompressedMatrix<Type,true>::resize( size_t m, size_t n, bool preserve )
 
       newEnd[n] = end_[n_];
 
-      std::swap( newBegin, begin_ );
+      swap( newBegin, begin_ );
       delete[] newBegin;
       end_ = newEnd;
       capacity_ = n;
@@ -4575,6 +4488,8 @@ inline void CompressedMatrix<Type,true>::reserve( size_t nonzeros )
 template< typename Type >  // Data type of the matrix
 void CompressedMatrix<Type,true>::reserve( size_t j, size_t nonzeros )
 {
+   using std::swap;
+
    BLAZE_USER_ASSERT( j < columns(), "Invalid column access index" );
 
    BLAZE_INTERNAL_ASSERT( end_ >= begin_, "Invalid internal storage detected" );
@@ -4610,7 +4525,7 @@ void CompressedMatrix<Type,true>::reserve( size_t j, size_t nonzeros )
 
       BLAZE_INTERNAL_ASSERT( newBegin[n_] == newEnd[n_], "Invalid pointer calculations" );
 
-      std::swap( newBegin, begin_ );
+      swap( newBegin, begin_ );
       deallocate( newBegin[0UL] );
       delete[] newBegin;
       end_ = newEnd;
@@ -4707,11 +4622,13 @@ inline void CompressedMatrix<Type,true>::shrinkToFit()
 template< typename Type >  // Data type of the matrix
 inline void CompressedMatrix<Type,true>::swap( CompressedMatrix& sm ) noexcept
 {
-   std::swap( m_, sm.m_ );
-   std::swap( n_, sm.n_ );
-   std::swap( capacity_, sm.capacity_ );
-   std::swap( begin_, sm.begin_ );
-   std::swap( end_  , sm.end_   );
+   using std::swap;
+
+   swap( m_, sm.m_ );
+   swap( n_, sm.n_ );
+   swap( capacity_, sm.capacity_ );
+   swap( begin_, sm.begin_ );
+   swap( end_  , sm.end_   );
 }
 /*! \endcond */
 //*************************************************************************************************
@@ -4750,6 +4667,8 @@ inline size_t CompressedMatrix<Type,true>::extendCapacity() const noexcept
 template< typename Type >  // Data type of the matrix
 void CompressedMatrix<Type,true>::reserveElements( size_t nonzeros )
 {
+   using std::swap;
+
    Iterator* newBegin = new Iterator[2UL*capacity_+2UL];
    Iterator* newEnd   = newBegin+capacity_+1UL;
 
@@ -4763,7 +4682,7 @@ void CompressedMatrix<Type,true>::reserveElements( size_t nonzeros )
 
    newEnd[n_] = newBegin[0UL]+nonzeros;
 
-   std::swap( newBegin, begin_ );
+   swap( newBegin, begin_ );
    end_ = newEnd;
 
    if( newBegin != nullptr ) {
@@ -4897,6 +4816,8 @@ template< typename Type >  // Data type of the matrix
 typename CompressedMatrix<Type,true>::Iterator
    CompressedMatrix<Type,true>::insert( Iterator pos, size_t i, size_t j, const Type& value )
 {
+   using std::swap;
+
    if( begin_[j+1UL] - end_[j] != 0 ) {
       std::move_backward( pos, end_[j], castUp( end_[j]+1UL ) );
       pos->value_ = value;
@@ -4948,7 +4869,7 @@ typename CompressedMatrix<Type,true>::Iterator
       tmp->index_ = i;
       std::move( pos, end_[n_-1UL], castUp( tmp+1UL ) );
 
-      std::swap( newBegin, begin_ );
+      swap( newBegin, begin_ );
       end_ = newEnd;
       deallocate( newBegin[0UL] );
       delete[] newBegin;
@@ -5249,7 +5170,7 @@ inline void CompressedMatrix<Type,true>::erase( size_t j, Iterator first, Iterat
 // In case the element is found, the function returns an iterator to the element. Otherwise an
 // iterator just past the last non-zero element of column \a j (the end() iterator) is returned.
 // Note that the returned compressed matrix iterator is subject to invalidation due to inserting
-// operations via the subscript operator or the insert() function!
+// operations via the subscript operator, the set() function or the insert() function!
 */
 template< typename Type >  // Data type of the matrix
 inline typename CompressedMatrix<Type,true>::Iterator
@@ -5274,7 +5195,7 @@ inline typename CompressedMatrix<Type,true>::Iterator
 // In case the element is found, the function returns an iterator to the element. Otherwise an
 // iterator just past the last non-zero element of column \a j (the end() iterator) is returned.
 // Note that the returned compressed matrix iterator is subject to invalidation due to inserting
-// operations via the subscript operator or the insert() function!
+// operations via the subscript operator, the set() function or the insert() function!
 */
 template< typename Type >  // Data type of the matrix
 inline typename CompressedMatrix<Type,true>::ConstIterator
@@ -5301,7 +5222,7 @@ inline typename CompressedMatrix<Type,true>::ConstIterator
 // given row index. In combination with the upperBound() function this function can be used to
 // create a pair of iterators specifying a range of indices. Note that the returned compressed
 // matrix iterator is subject to invalidation due to inserting operations via the function call
-// operator or the insert() function!
+// operator, the set() function or the insert() function!
 */
 template< typename Type >  // Data type of the matrix
 inline typename CompressedMatrix<Type,true>::Iterator
@@ -5325,7 +5246,7 @@ inline typename CompressedMatrix<Type,true>::Iterator
 // given row index. In combination with the upperBound() function this function can be used to
 // create a pair of iterators specifying a range of indices. Note that the returned compressed
 // matrix iterator is subject to invalidation due to inserting operations via the function call
-// operator or the insert() function!
+// operator, the set() function or the insert() function!
 */
 template< typename Type >  // Data type of the matrix
 inline typename CompressedMatrix<Type,true>::ConstIterator
@@ -5351,10 +5272,10 @@ inline typename CompressedMatrix<Type,true>::ConstIterator
 // \return Iterator to the first index greater then the given index, end() iterator otherwise.
 //
 // The function returns a column iterator to the first element with an index greater then the
-// given row index. In combination with the upperBound() function this function can be used to
+// given row index. In combination with the lowerBound() function this function can be used to
 // create a pair of iterators specifying a range of indices. Note that the returned compressed
 // matrix iterator is subject to invalidation due to inserting operations via the function call
-// operator or the insert() function!
+// operator, the set() function or the insert() function!
 */
 template< typename Type >  // Data type of the matrix
 inline typename CompressedMatrix<Type,true>::Iterator
@@ -5375,10 +5296,10 @@ inline typename CompressedMatrix<Type,true>::Iterator
 // \return Iterator to the first index greater then the given index, end() iterator otherwise.
 //
 // The function returns a column iterator to the first element with an index greater then the
-// given row index. In combination with the upperBound() function this function can be used to
+// given row index. In combination with the lowerBound() function this function can be used to
 // create a pair of iterators specifying a range of indices. Note that the returned compressed
 // matrix iterator is subject to invalidation due to inserting operations via the function call
-// operator or the insert() function!
+// operator, the set() function or the insert() function!
 */
 template< typename Type >  // Data type of the matrix
 inline typename CompressedMatrix<Type,true>::ConstIterator
@@ -6567,14 +6488,8 @@ struct LowType< CompressedMatrix<T1,SO>, CompressedMatrix<T2,SO> >
 
 //*************************************************************************************************
 /*! \cond BLAZE_INTERNAL */
-template< typename T, bool SO, size_t I, size_t J, size_t M, size_t N >
-struct SubmatrixTrait< CompressedMatrix<T,SO>, I, J, M, N >
-{
-   using Type = StaticMatrix<T,M,N,SO>;
-};
-
-template< typename T, bool SO >
-struct SubmatrixTrait< CompressedMatrix<T,SO> >
+template< typename T, bool SO, size_t... CSAs >
+struct SubmatrixTrait< CompressedMatrix<T,SO>, CSAs... >
 {
    using Type = CompressedMatrix<T,SO>;
 };

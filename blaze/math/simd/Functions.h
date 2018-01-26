@@ -3,7 +3,7 @@
 //  \file blaze/math/simd/Functions.h
 //  \brief Header file for all SIMD functions
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -62,6 +62,7 @@
 #include <blaze/math/simd/Exp10.h>
 #include <blaze/math/simd/Floor.h>
 #include <blaze/math/simd/FMA.h>
+#include <blaze/math/simd/Hypot.h>
 #include <blaze/math/simd/InvCbrt.h>
 #include <blaze/math/simd/InvSqrt.h>
 #include <blaze/math/simd/Loada.h>

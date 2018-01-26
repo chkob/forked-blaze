@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/DynamicVector.h
 //  \brief Header file for the implementation of an arbitrarily sized vector
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -75,6 +75,7 @@
 #include <blaze/math/typetraits/HasSIMDSub.h>
 #include <blaze/math/typetraits/HighType.h>
 #include <blaze/math/typetraits/IsAligned.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsPadded.h>
 #include <blaze/math/typetraits/IsResizable.h>
 #include <blaze/math/typetraits/IsShrinkable.h>
@@ -300,12 +301,6 @@ class DynamicVector
    template< typename VT > inline DynamicVector& operator*=( const Vector<VT,TF>& rhs );
    template< typename VT > inline DynamicVector& operator/=( const DenseVector<VT,TF>& rhs );
    template< typename VT > inline DynamicVector& operator%=( const Vector<VT,TF>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, DynamicVector >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, DynamicVector >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -560,17 +555,10 @@ inline DynamicVector<Type,TF>::DynamicVector( size_t n )
 template< typename Type  // Data type of the vector
         , bool TF >      // Transpose flag
 inline DynamicVector<Type,TF>::DynamicVector( size_t n, const Type& init )
-   : size_    ( n )                            // The current size/dimension of the vector
-   , capacity_( addPadding( n ) )              // The maximum capacity of the vector
-   , v_       ( allocate<Type>( capacity_ ) )  // The vector elements
+   : DynamicVector( n )
 {
    for( size_t i=0UL; i<size_; ++i )
       v_[i] = init;
-
-   if( IsVectorizable<Type>::value ) {
-      for( size_t i=size_; i<capacity_; ++i )
-         v_[i] = Type();
-   }
 
    BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
 }
@@ -595,11 +583,9 @@ inline DynamicVector<Type,TF>::DynamicVector( size_t n, const Type& init )
 template< typename Type  // Data type of the vector
         , bool TF >      // Transpose flag
 inline DynamicVector<Type,TF>::DynamicVector( initializer_list<Type> list )
-   : size_    ( list.size() )                  // The current size/dimension of the vector
-   , capacity_( addPadding( size_ ) )          // The maximum capacity of the vector
-   , v_       ( allocate<Type>( capacity_ ) )  // The vector elements
+   : DynamicVector( list.size() )
 {
-   std::fill( std::copy( list.begin(), list.end(), v_ ), v_+capacity_, Type() );
+   std::fill( std::copy( list.begin(), list.end(), begin() ), end(), Type() );
 
    BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
 }
@@ -630,17 +616,10 @@ template< typename Type     // Data type of the vector
         , bool TF >         // Transpose flag
 template< typename Other >  // Data type of the initialization array
 inline DynamicVector<Type,TF>::DynamicVector( size_t n, const Other* array )
-   : size_    ( n )                            // The current size/dimension of the vector
-   , capacity_( addPadding( n ) )              // The maximum capacity of the vector
-   , v_       ( allocate<Type>( capacity_ ) )  // The vector elements
+   : DynamicVector( n )
 {
    for( size_t i=0UL; i<n; ++i )
       v_[i] = array[i];
-
-   if( IsVectorizable<Type>::value ) {
-      for( size_t i=n; i<capacity_; ++i )
-         v_[i] = Type();
-   }
 
    BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
 }
@@ -669,17 +648,10 @@ template< typename Type   // Data type of the vector
 template< typename Other  // Data type of the initialization array
         , size_t Dim >    // Dimension of the initialization array
 inline DynamicVector<Type,TF>::DynamicVector( const Other (&array)[Dim] )
-   : size_    ( Dim )                          // The current size/dimension of the vector
-   , capacity_( addPadding( Dim ) )            // The maximum capacity of the vector
-   , v_       ( allocate<Type>( capacity_ ) )  // The vector elements
+   : DynamicVector( Dim )
 {
    for( size_t i=0UL; i<Dim; ++i )
       v_[i] = array[i];
-
-   if( IsVectorizable<Type>::value ) {
-      for( size_t i=Dim; i<capacity_; ++i )
-         v_[i] = Type();
-   }
 
    BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
 }
@@ -697,14 +669,11 @@ inline DynamicVector<Type,TF>::DynamicVector( const Other (&array)[Dim] )
 template< typename Type  // Data type of the vector
         , bool TF >      // Transpose flag
 inline DynamicVector<Type,TF>::DynamicVector( const DynamicVector& v )
-   : size_    ( v.size_ )                      // The current size/dimension of the vector
-   , capacity_( addPadding( v.size_ ) )        // The maximum capacity of the vector
-   , v_       ( allocate<Type>( capacity_ ) )  // The vector elements
+   : DynamicVector( v.size_ )
 {
    BLAZE_INTERNAL_ASSERT( capacity_ <= v.capacity_, "Invalid capacity estimation" );
 
-   for( size_t i=0UL; i<capacity_; ++i )
-      v_[i] = v.v_[i];
+   smpAssign( *this, ~v );
 
    BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
 }
@@ -739,13 +708,12 @@ template< typename Type  // Data type of the vector
         , bool TF >      // Transpose flag
 template< typename VT >  // Type of the foreign vector
 inline DynamicVector<Type,TF>::DynamicVector( const Vector<VT,TF>& v )
-   : size_    ( (~v).size() )                  // The current size/dimension of the vector
-   , capacity_( addPadding( size_ ) )          // The maximum capacity of the vector
-   , v_       ( allocate<Type>( capacity_ ) )  // The vector elements
+   : DynamicVector( (~v).size() )
 {
-   for( size_t i=( IsSparseVector<VT>::value   ? 0UL       : size_ );
-               i<( IsVectorizable<Type>::value ? capacity_ : size_ ); ++i ) {
-      v_[i] = Type();
+   if( IsSparseVector<VT>::value ) {
+      for( size_t i=0UL; i<size_; ++i ) {
+         v_[i] = Type();
+      }
    }
 
    smpAssign( *this, ~v );
@@ -1332,54 +1300,6 @@ inline DynamicVector<Type,TF>& DynamicVector<Type,TF>::operator%=( const Vector<
 //*************************************************************************************************
 
 
-//*************************************************************************************************
-/*!\brief Multiplication assignment operator for the multiplication between a vector and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the vector.
-*/
-template< typename Type     // Data type of the vector
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, DynamicVector<Type,TF> >&
-   DynamicVector<Type,TF>::operator*=( Other rhs )
-{
-   smpAssign( *this, (*this) * rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Division assignment operator for the division of a vector by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the vector.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename Type     // Data type of the vector
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, DynamicVector<Type,TF> >&
-   DynamicVector<Type,TF>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   smpAssign( *this, (*this) / rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
 
 
 //=================================================================================================
@@ -1522,6 +1442,8 @@ template< typename Type  // Data type of the vector
         , bool TF >      // Transpose flag
 inline void DynamicVector<Type,TF>::resize( size_t n, bool preserve )
 {
+   using std::swap;
+
    if( n > capacity_ )
    {
       // Allocating a new array
@@ -1539,7 +1461,7 @@ inline void DynamicVector<Type,TF>::resize( size_t n, bool preserve )
       }
 
       // Replacing the old array
-      std::swap( v_, tmp );
+      swap( v_, tmp );
       deallocate( tmp );
       capacity_ = newCapacity;
    }
@@ -1588,6 +1510,8 @@ template< typename Type  // Data type of the vector
         , bool TF >      // Transpose flag
 inline void DynamicVector<Type,TF>::reserve( size_t n )
 {
+   using std::swap;
+
    if( n > capacity_ )
    {
       // Allocating a new array
@@ -1603,7 +1527,7 @@ inline void DynamicVector<Type,TF>::reserve( size_t n )
       }
 
       // Replacing the old array
-      std::swap( tmp, v_ );
+      swap( tmp, v_ );
       deallocate( tmp );
       capacity_ = newCapacity;
    }
@@ -1642,9 +1566,11 @@ template< typename Type  // Data type of the vector
         , bool TF >      // Transpose flag
 inline void DynamicVector<Type,TF>::swap( DynamicVector& v ) noexcept
 {
-   std::swap( size_, v.size_ );
-   std::swap( capacity_, v.capacity_ );
-   std::swap( v_, v.v_ );
+   using std::swap;
+
+   swap( size_, v.size_ );
+   swap( capacity_, v.capacity_ );
+   swap( v_, v.v_ );
 }
 //*************************************************************************************************
 
@@ -2716,6 +2642,24 @@ struct HasMutableDataAccess< DynamicVector<T,TF> >
 /*! \cond BLAZE_INTERNAL */
 template< typename T, bool TF >
 struct IsAligned< DynamicVector<T,TF> >
+   : public TrueType
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ISCONTIGUOUS SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename T, bool TF >
+struct IsContiguous< DynamicVector<T,TF> >
    : public TrueType
 {};
 /*! \endcond */

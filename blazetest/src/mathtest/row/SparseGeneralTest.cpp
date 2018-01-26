@@ -3,7 +3,7 @@
 //  \file src/mathtest/row/SparseGeneralTest.cpp
 //  \brief Source file for the Row sparse general test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -90,6 +90,7 @@ SparseGeneralTest::SparseGeneralTest()
    testIsDefault();
    testIsSame();
    testSubvector();
+   testElements();
 }
 //*************************************************************************************************
 
@@ -3455,14 +3456,14 @@ void SparseGeneralTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st column via Iterator
+      // Counting the number of elements in 1st column via Iterator (end-begin)
       {
-         test_ = "Row-major Iterator subtraction";
+         test_ = "Row-major Iterator subtraction (end-begin)";
 
          RT row1 = blaze::row( mat_, 1UL );
-         const size_t number( end( row1 ) - begin( row1 ) );
+         const ptrdiff_t number( end( row1 ) - begin( row1 ) );
 
-         if( number != 1UL ) {
+         if( number != 1L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -3473,14 +3474,14 @@ void SparseGeneralTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 2nd column via ConstIterator
+      // Counting the number of elements in 2nd column via ConstIterator (end-begin)
       {
-         test_ = "Row-major ConstIterator subtraction";
+         test_ = "Row-major ConstIterator subtraction (end-begin)";
 
          RT row2 = blaze::row( mat_, 2UL );
-         const size_t number( cend( row2 ) - cbegin( row2 ) );
+         const ptrdiff_t number( cend( row2 ) - cbegin( row2 ) );
 
-         if( number != 2UL ) {
+         if( number != 2L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -3776,14 +3777,14 @@ void SparseGeneralTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st column via Iterator
+      // Counting the number of elements in 1st column via Iterator (end-begin)
       {
-         test_ = "Column-major Iterator subtraction";
+         test_ = "Column-major Iterator subtraction (end-begin)";
 
          ORT row1 = blaze::row( tmat_, 1UL );
-         const size_t number( end( row1 ) - begin( row1 ) );
+         const ptrdiff_t number( end( row1 ) - begin( row1 ) );
 
-         if( number != 1UL ) {
+         if( number != 1L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -3794,14 +3795,14 @@ void SparseGeneralTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 2nd column via ConstIterator
+      // Counting the number of elements in 2nd column via ConstIterator (end-begin)
       {
-         test_ = "Column-major ConstIterator subtraction";
+         test_ = "Column-major ConstIterator subtraction (end-begin)";
 
          ORT row2 = blaze::row( tmat_, 2UL );
-         const size_t number( cend( row2 ) - cbegin( row2 ) );
+         const ptrdiff_t number( cend( row2 ) - cbegin( row2 ) );
 
-         if( number != 2UL ) {
+         if( number != 2L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -7828,28 +7829,56 @@ void SparseGeneralTest::testSubvector()
 
       initialize();
 
-      RT   row1 = blaze::row( mat_, 1UL );
-      auto sv   = blaze::subvector( row1, 0UL, 4UL );
+      {
+         RT   row1 = blaze::row( mat_, 1UL );
+         auto sv   = blaze::subvector( row1, 0UL, 4UL );
 
-      if( sv[1] != 1 ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Subscript operator access failed\n"
-             << " Details:\n"
-             << "   Result: " << sv[1] << "\n"
-             << "   Expected result: 1\n";
-         throw std::runtime_error( oss.str() );
+         if( sv[1] != 1 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << sv[1] << "\n"
+                << "   Expected result: 1\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( sv.begin()->value() != 1 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << sv.begin()->value() << "\n"
+                << "   Expected result: 1\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( sv.begin()->value() != 1 ) {
+      try {
+         RT   row1 = blaze::row( mat_, 1UL );
+         auto sv   = blaze::subvector( row1, 4UL, 4UL );
+
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Iterator access failed\n"
+             << " Error: Setup of out-of-bounds subvector succeeded\n"
              << " Details:\n"
-             << "   Result: " << sv.begin()->value() << "\n"
-             << "   Expected result: 1\n";
+             << "   Result:\n" << sv << "\n";
          throw std::runtime_error( oss.str() );
       }
+      catch( std::invalid_argument& ) {}
+
+      try {
+         RT   row1 = blaze::row( mat_, 1UL );
+         auto sv   = blaze::subvector( row1, 0UL, 5UL );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds subvector succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << sv << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
    }
 
 
@@ -7862,28 +7891,167 @@ void SparseGeneralTest::testSubvector()
 
       initialize();
 
-      ORT  row1 = blaze::row( tmat_, 1UL );
-      auto sv   = blaze::subvector( row1, 0UL, 4UL );
+      {
+         ORT  row1 = blaze::row( tmat_, 1UL );
+         auto sv   = blaze::subvector( row1, 0UL, 4UL );
 
-      if( sv[1] != 1 ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Subscript operator access failed\n"
-             << " Details:\n"
-             << "   Result: " << sv[1] << "\n"
-             << "   Expected result: 1\n";
-         throw std::runtime_error( oss.str() );
+         if( sv[1] != 1 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << sv[1] << "\n"
+                << "   Expected result: 1\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( sv.begin()->value() != 1 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << sv.begin()->value() << "\n"
+                << "   Expected result: 1\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( sv.begin()->value() != 1 ) {
+      try {
+         ORT  row1 = blaze::row( tmat_, 1UL );
+         auto sv   = blaze::subvector( row1, 4UL, 4UL );
+
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Iterator access failed\n"
+             << " Error: Setup of out-of-bounds subvector succeeded\n"
              << " Details:\n"
-             << "   Result: " << sv.begin()->value() << "\n"
-             << "   Expected result: 1\n";
+             << "   Result:\n" << sv << "\n";
          throw std::runtime_error( oss.str() );
       }
+      catch( std::invalid_argument& ) {}
+
+      try {
+         ORT  row1 = blaze::row( tmat_, 1UL );
+         auto sv   = blaze::subvector( row1, 0UL, 5UL );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds subvector succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << sv << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
+   }
+}
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*!\brief Test of the \c elements() function with the Row specialization.
+//
+// \return void
+// \exception std::runtime_error Error detected.
+//
+// This function performs a test of the \c elements() function used with the Row specialization.
+// In case an error is detected, a \a std::runtime_error exception is thrown.
+*/
+void SparseGeneralTest::testElements()
+{
+   //=====================================================================================
+   // Row-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Row-major elements() function";
+
+      initialize();
+
+      {
+         RT   row2 = blaze::row( mat_, 2UL );
+         auto e    = blaze::elements( row2, { 2UL, 0UL } );
+
+         if( e[1] != -2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << e[1] << "\n"
+                << "   Expected result: -2\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( e.begin()->value() != -3 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << e.begin()->value() << "\n"
+                << "   Expected result: -3\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      try {
+         RT   row2 = blaze::row( mat_, 2UL );
+         auto e    = blaze::elements( row2, { 4UL } );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds element selection succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << e << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
+   }
+
+
+   //=====================================================================================
+   // Column-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Column-major elements() function";
+
+      initialize();
+
+      {
+         ORT  row2 = blaze::row( tmat_, 2UL );
+         auto e    = blaze::elements( row2, { 2UL, 0UL } );
+
+         if( e[1] != -2 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result: " << e[1] << "\n"
+                << "   Expected result: -2\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( e.begin()->value() != -3 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << e.begin()->value() << "\n"
+                << "   Expected result: -3\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      try {
+         ORT  row2 = blaze::row( tmat_, 2UL );
+         auto e    = blaze::elements( row2, { 4UL } );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds element selection succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << e << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
    }
 }
 //*************************************************************************************************

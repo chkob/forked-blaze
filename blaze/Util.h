@@ -3,7 +3,7 @@
 //  \file blaze/Util.h
 //  \brief Header file for the inclusion of the utility module of the Blaze library
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -57,8 +57,8 @@
 #include <blaze/util/Exception.h>
 #include <blaze/util/FunctionTrace.h>
 #include <blaze/util/Indices.h>
+#include <blaze/util/InitializerList.h>
 #include <blaze/util/IntegralConstant.h>
-#include <blaze/util/InputString.h>
 #include <blaze/util/InvalidType.h>
 #include <blaze/util/Limits.h>
 #include <blaze/util/Memory.h>
@@ -73,6 +73,7 @@
 #include <blaze/util/Random.h>
 #include <blaze/util/Serialization.h>
 #include <blaze/util/Singleton.h>
+#include <blaze/util/SmallVector.h>
 #include <blaze/util/StaticAssert.h>
 #include <blaze/util/Suffix.h>
 #include <blaze/util/Thread.h>

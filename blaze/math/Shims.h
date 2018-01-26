@@ -3,7 +3,7 @@
 //  \file blaze/math/Shims.h
 //  \brief Header file for the mathematical shims
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -59,9 +59,11 @@
 #include <blaze/math/shims/Erf.h>
 #include <blaze/math/shims/Erfc.h>
 #include <blaze/math/shims/Eval.h>
+#include <blaze/math/shims/Evaluate.h>
 #include <blaze/math/shims/Exp.h>
 #include <blaze/math/shims/Exp2.h>
 #include <blaze/math/shims/Floor.h>
+#include <blaze/math/shims/Hypot.h>
 #include <blaze/math/shims/Imaginary.h>
 #include <blaze/math/shims/InvCbrt.h>
 #include <blaze/math/shims/Invert.h>
@@ -76,6 +78,8 @@
 #include <blaze/math/shims/Log2.h>
 #include <blaze/math/shims/Log10.h>
 #include <blaze/math/shims/Pow.h>
+#include <blaze/math/shims/Pow2.h>
+#include <blaze/math/shims/Pow3.h>
 #include <blaze/math/shims/Real.h>
 #include <blaze/math/shims/Reset.h>
 #include <blaze/math/shims/Round.h>
@@ -83,7 +87,6 @@
 #include <blaze/math/shims/Sin.h>
 #include <blaze/math/shims/Sinh.h>
 #include <blaze/math/shims/Sqrt.h>
-#include <blaze/math/shims/Square.h>
 #include <blaze/math/shims/Tan.h>
 #include <blaze/math/shims/Tanh.h>
 #include <blaze/math/shims/Trunc.h>

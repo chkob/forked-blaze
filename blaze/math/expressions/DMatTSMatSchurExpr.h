@@ -3,7 +3,7 @@
 //  \file blaze/math/expressions/DMatTSMatSchurExpr.h
 //  \brief Header file for the dense matrix/transpose sparse matrix Schur product expression
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -156,7 +156,7 @@ class DMatTSMatSchurExpr
    using ReturnType = const IfTrue_< returnExpr, ExprReturnType, ElementType >;
 
    //! Data type for composite expression templates.
-   using CompositeType = const ResultType;
+   using CompositeType = IfTrue_< useAssign, const ResultType, const DMatTSMatSchurExpr& >;
 
    //! Composite type of the left-hand side dense matrix expression.
    using LeftOperand = If_< IsExpression<MT1>, const MT1, const MT1& >;

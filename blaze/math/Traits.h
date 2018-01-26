@@ -3,7 +3,7 @@
 //  \file blaze/math/Traits.h
 //  \brief Header file for all expression traits
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -47,6 +47,7 @@
 #include <blaze/math/traits/BinaryMapExprTrait.h>
 #include <blaze/math/traits/BinaryMapTrait.h>
 #include <blaze/math/traits/ColumnExprTrait.h>
+#include <blaze/math/traits/ColumnsExprTrait.h>
 #include <blaze/math/traits/ColumnsTrait.h>
 #include <blaze/math/traits/ColumnTrait.h>
 #include <blaze/math/traits/CrossExprTrait.h>
@@ -67,6 +68,7 @@
 #include <blaze/math/traits/DerestrictTrait.h>
 #include <blaze/math/traits/DivExprTrait.h>
 #include <blaze/math/traits/DivTrait.h>
+#include <blaze/math/traits/ElementsExprTrait.h>
 #include <blaze/math/traits/ElementsTrait.h>
 #include <blaze/math/traits/EvalExprTrait.h>
 #include <blaze/math/traits/ImagTrait.h>
@@ -75,6 +77,7 @@
 #include <blaze/math/traits/MultTrait.h>
 #include <blaze/math/traits/RealTrait.h>
 #include <blaze/math/traits/RowExprTrait.h>
+#include <blaze/math/traits/RowsExprTrait.h>
 #include <blaze/math/traits/RowsTrait.h>
 #include <blaze/math/traits/RowTrait.h>
 #include <blaze/math/traits/SchurExprTrait.h>

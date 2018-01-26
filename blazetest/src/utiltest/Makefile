@@ -2,7 +2,7 @@
 #
 #  Makefile for the utiltest module of the Blaze test suite
 #
-#  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+#  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 #
 #  This file is part of the Blaze library. You can redistribute it and/or modify it under
 #  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -35,7 +35,7 @@
 # Build rules
 default: all
 
-all: alignedallocator memory numericcast typetraits valuetraits
+all: alignedallocator memory numericcast smallvector typetraits valuetraits
 
 essential: all
 
@@ -60,6 +60,11 @@ numericcast:
 	@echo "Building the numeric cast tests..."
 	@$(MAKE) --no-print-directory -C ./numericcast $(MAKECMDGOALS)
 
+smallvector:
+	@echo
+	@echo "Building the small vector tests..."
+	@$(MAKE) --no-print-directory -C ./smallvector $(MAKECMDGOALS)
+
 typetraits:
 	@echo
 	@echo "Building the type traits tests..."
@@ -76,6 +81,7 @@ reset:
 	@$(MAKE) --no-print-directory -C ./alignedallocator reset
 	@$(MAKE) --no-print-directory -C ./memory reset
 	@$(MAKE) --no-print-directory -C ./numericcast reset
+	@$(MAKE) --no-print-directory -C ./smallvector reset
 	@$(MAKE) --no-print-directory -C ./typetraits reset
 	@$(MAKE) --no-print-directory -C ./valuetraits reset
 
@@ -83,10 +89,11 @@ clean:
 	@$(MAKE) --no-print-directory -C ./alignedallocator clean
 	@$(MAKE) --no-print-directory -C ./memory clean
 	@$(MAKE) --no-print-directory -C ./numericcast clean
+	@$(MAKE) --no-print-directory -C ./smallvector clean
 	@$(MAKE) --no-print-directory -C ./typetraits clean
 	@$(MAKE) --no-print-directory -C ./valuetraits clean
 
 
 # Setting the independent commands
 .PHONY: default all essential single reset clean \
-        alignedallocator memory numericcast typetraits valuetraits
+        alignedallocator memory numericcast smallvector typetraits valuetraits

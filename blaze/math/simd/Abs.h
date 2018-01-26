@@ -3,7 +3,7 @@
 //  \file blaze/math/simd/Abs.h
 //  \brief Header file for the SIMD abs functionality
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -62,7 +62,7 @@ namespace blaze {
 //
 // This operation is only available for SSSE3, AVX2, and AVX-512.
 */
-BLAZE_ALWAYS_INLINE const SIMDuint8 abs( const SIMDint8& a ) noexcept
+BLAZE_ALWAYS_INLINE const SIMDint8 abs( const SIMDint8& a ) noexcept
 #if BLAZE_AVX512BW_MODE
 {
    return _mm512_abs_epi8( a.value );
@@ -98,7 +98,7 @@ BLAZE_ALWAYS_INLINE const SIMDuint8 abs( const SIMDint8& a ) noexcept
 //
 // This operation is only available for SSSE3, AVX2, and AVX-512.
 */
-BLAZE_ALWAYS_INLINE const SIMDuint16 abs( const SIMDint16& a ) noexcept
+BLAZE_ALWAYS_INLINE const SIMDint16 abs( const SIMDint16& a ) noexcept
 #if BLAZE_AVX512BW_MODE
 {
    return _mm512_abs_epi16( a.value );
@@ -134,7 +134,7 @@ BLAZE_ALWAYS_INLINE const SIMDuint16 abs( const SIMDint16& a ) noexcept
 //
 // This operation is only available for SSSE3, AVX2, MIC, and AVX-512.
 */
-BLAZE_ALWAYS_INLINE const SIMDuint32 abs( const SIMDint32& a ) noexcept
+BLAZE_ALWAYS_INLINE const SIMDint32 abs( const SIMDint32& a ) noexcept
 #if BLAZE_AVX512F_MODE || BLAZE_MIC_MODE
 {
    return _mm512_abs_epi32( a.value );
@@ -170,7 +170,7 @@ BLAZE_ALWAYS_INLINE const SIMDuint32 abs( const SIMDint32& a ) noexcept
 //
 // This operation is only available for MIC and AVX-512.
 */
-BLAZE_ALWAYS_INLINE const SIMDuint64 abs( const SIMDint64& a ) noexcept
+BLAZE_ALWAYS_INLINE const SIMDint64 abs( const SIMDint64& a ) noexcept
 #if BLAZE_AVX512F_MODE || BLAZE_MIC_MODE
 {
    return _mm512_abs_epi64( a.value );

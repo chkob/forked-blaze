@@ -3,7 +3,7 @@
 //  \file blazetest/mathtest/submatrix/DenseUnalignedTest.h
 //  \brief Header file for the Submatrix dense unaligned test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -87,24 +87,27 @@ class DenseUnalignedTest
    /*!\name Test functions */
    //@{
    void testConstructors();
-   void testAssignment  ();
-   void testAddAssign   ();
-   void testSubAssign   ();
-   void testSchurAssign ();
-   void testMultAssign  ();
-   void testScaling     ();
+   void testAssignment();
+   void testAddAssign();
+   void testSubAssign();
+   void testSchurAssign();
+   void testMultAssign();
+   void testScaling();
    void testFunctionCall();
-   void testIterator    ();
-   void testNonZeros    ();
-   void testReset       ();
-   void testClear       ();
-   void testTranspose   ();
-   void testCTranspose  ();
-   void testIsDefault   ();
-   void testIsSame      ();
-   void testSubmatrix   ();
-   void testRow         ();
-   void testColumn      ();
+   void testIterator();
+   void testNonZeros();
+   void testReset();
+   void testClear();
+   void testTranspose();
+   void testCTranspose();
+   void testIsDefault();
+   void testIsSame();
+   void testSubmatrix();
+   void testRow();
+   void testRows();
+   void testColumn();
+   void testColumns();
+   void testBand();
 
    template< typename Type >
    void checkRows( const Type& matrix, size_t expectedRows ) const;
@@ -211,7 +214,7 @@ void DenseUnalignedTest::checkRows( const Type& matrix, size_t expectedRows ) co
 /*!\brief Checking the number of columns of the given dense matrix.
 //
 // \param matrix The dense matrix to be checked.
-// \param expectedRows The expected number of columns of the dense matrix.
+// \param expectedColumns The expected number of columns of the dense matrix.
 // \return void
 // \exception std::runtime_error Error detected.
 //

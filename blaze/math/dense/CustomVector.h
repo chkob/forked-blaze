@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/CustomVector.h
 //  \brief Header file for the implementation of a customizable vector
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -73,6 +73,8 @@
 #include <blaze/math/typetraits/HasSIMDDiv.h>
 #include <blaze/math/typetraits/HasSIMDMult.h>
 #include <blaze/math/typetraits/HasSIMDSub.h>
+#include <blaze/math/typetraits/IsAligned.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsCustom.h>
 #include <blaze/math/typetraits/IsPadded.h>
 #include <blaze/math/typetraits/IsSIMDCombinable.h>
@@ -96,7 +98,6 @@
 #include <blaze/util/TrueType.h>
 #include <blaze/util/Types.h>
 #include <blaze/util/typetraits/IsIntegral.h>
-#include <blaze/util/typetraits/IsNumeric.h>
 #include <blaze/util/typetraits/IsVectorizable.h>
 #include <blaze/util/typetraits/RemoveConst.h>
 #include <blaze/util/Unused.h>
@@ -506,12 +507,6 @@ class CustomVector
    template< typename VT > inline CustomVector& operator*=( const Vector<VT,TF>& rhs );
    template< typename VT > inline CustomVector& operator/=( const DenseVector<VT,TF>& rhs );
    template< typename VT > inline CustomVector& operator%=( const Vector<VT,TF>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, CustomVector >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, CustomVector >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -1472,52 +1467,6 @@ inline CustomVector<Type,AF,PF,TF>& CustomVector<Type,AF,PF,TF>::operator%=( con
    const CrossType tmp( *this % (~rhs) );
    assign( *this, tmp );
 
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Multiplication assignment operator for the multiplication between a vector and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the vector.
-*/
-template< typename Type     // Data type of the vector
-        , bool AF           // Alignment flag
-        , bool PF           // Padding flag
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, CustomVector<Type,AF,PF,TF> >&
-   CustomVector<Type,AF,PF,TF>::operator*=( Other rhs )
-{
-   smpAssign( *this, (*this) * rhs );
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Division assignment operator for the division of a vector by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the vector.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename Type     // Data type of the vector
-        , bool AF           // Alignment flag
-        , bool PF           // Padding flag
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, CustomVector<Type,AF,PF,TF> >&
-   CustomVector<Type,AF,PF,TF>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   smpAssign( *this, (*this) / rhs );
    return *this;
 }
 //*************************************************************************************************
@@ -2544,7 +2493,7 @@ inline void CustomVector<Type,AF,PF,TF>::multAssign( const SparseVector<VT,TF>& 
 {
    BLAZE_INTERNAL_ASSERT( size_ == (~rhs).size(), "Invalid vector sizes" );
 
-   const DynamicVector<Type,TF> tmp( serial( *this ) );
+   const ResultType tmp( serial( *this ) );
 
    reset();
 
@@ -2772,12 +2721,6 @@ class CustomVector<Type,AF,padded,TF>
    template< typename VT > inline CustomVector& operator*=( const Vector<VT,TF>& rhs );
    template< typename VT > inline CustomVector& operator/=( const DenseVector<VT,TF>& rhs );
    template< typename VT > inline CustomVector& operator%=( const Vector<VT,TF>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, CustomVector >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, CustomVector >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -3744,54 +3687,6 @@ inline CustomVector<Type,AF,padded,TF>&
    const CrossType tmp( *this % (~rhs) );
    assign( *this, tmp );
 
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Multiplication assignment operator for the multiplication between a vector and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the vector.
-*/
-template< typename Type     // Data type of the vector
-        , bool AF           // Alignment flag
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, CustomVector<Type,AF,padded,TF> >&
-   CustomVector<Type,AF,padded,TF>::operator*=( Other rhs )
-{
-   smpAssign( *this, (*this) * rhs );
-   return *this;
-}
-/*! \endcond */
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*! \cond BLAZE_INTERNAL */
-/*!\brief Division assignment operator for the division of a vector by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the vector.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename Type     // Data type of the vector
-        , bool AF           // Alignment flag
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, CustomVector<Type,AF,padded,TF> >&
-   CustomVector<Type,AF,padded,TF>::operator/=( Other rhs )
-{
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   smpAssign( *this, (*this) / rhs );
    return *this;
 }
 /*! \endcond */
@@ -4826,7 +4721,7 @@ inline void CustomVector<Type,AF,padded,TF>::multAssign( const SparseVector<VT,T
 {
    BLAZE_INTERNAL_ASSERT( size_ == (~rhs).size(), "Invalid vector sizes" );
 
-   const DynamicVector<Type,TF> tmp( serial( *this ) );
+   const ResultType tmp( serial( *this ) );
 
    reset();
 
@@ -5158,6 +5053,24 @@ struct IsAligned< CustomVector<T,aligned,PF,TF> >
 
 //=================================================================================================
 //
+//  ISALIGNED SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename T, bool PF, bool TF >
+struct IsContiguous< CustomVector<T,aligned,PF,TF> >
+   : public TrueType
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
 //  ISPADDED SPECIALIZATIONS
 //
 //=================================================================================================
@@ -5259,13 +5172,13 @@ struct BinaryMapTrait< CustomVector<T1,AF1,PF1,TF>, CustomVector<T2,AF2,PF2,TF>,
 template< typename T, bool AF, bool PF, bool TF, size_t I, size_t N >
 struct SubvectorTrait< CustomVector<T,AF,PF,TF>, I, N >
 {
-   using Type = StaticVector<T,N,TF>;
+   using Type = StaticVector<RemoveConst_<T>,N,TF>;
 };
 
 template< typename T, bool AF, bool PF, bool TF >
 struct SubvectorTrait< CustomVector<T,AF,PF,TF> >
 {
-   using Type = DynamicVector<T,TF>;
+   using Type = DynamicVector<RemoveConst_<T>,TF>;
 };
 /*! \endcond */
 //*************************************************************************************************
@@ -5284,13 +5197,13 @@ struct SubvectorTrait< CustomVector<T,AF,PF,TF> >
 template< typename T, bool AF, bool PF, bool TF, size_t... CEAs >
 struct ElementsTrait< CustomVector<T,AF,PF,TF>, CEAs... >
 {
-   using Type = StaticVector<T,sizeof...(CEAs),TF>;
+   using Type = StaticVector<RemoveConst_<T>,sizeof...(CEAs),TF>;
 };
 
 template< typename T, bool AF, bool PF, bool TF >
 struct ElementsTrait< CustomVector<T,AF,PF,TF> >
 {
-   using Type = DynamicVector<T,TF>;
+   using Type = DynamicVector<RemoveConst_<T>,TF>;
 };
 /*! \endcond */
 //*************************************************************************************************

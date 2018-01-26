@@ -3,7 +3,7 @@
 //  \file blaze/util/AlignedAllocator.h
 //  \brief Header file for the AlignedAllocator implementation
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -121,15 +121,17 @@ class AlignedAllocator
    /*!\name Allocation functions */
    //@{
    inline Pointer allocate  ( size_t numObjects, const void* localityHint = nullptr );
-   inline void    deallocate( Pointer ptr, size_t numObjects );
+   inline void    deallocate( Pointer ptr, size_t numObjects ) noexcept;
    //@}
    //**********************************************************************************************
 
    //**Construction functions**********************************************************************
    /*!\name Construction functions */
    //@{
-   inline void construct( Pointer ptr, const Type& value );
-   inline void destroy  ( Pointer ptr ) noexcept;
+   template< typename... Args >
+   inline void construct( Pointer ptr, Args&&... args );
+
+   inline void destroy( Pointer ptr ) noexcept;
    //@}
    //**********************************************************************************************
 };
@@ -267,7 +269,7 @@ inline typename AlignedAllocator<Type>::Pointer
 // to allocate() that origianlly produced \a ptr.
 */
 template< typename Type >
-inline void AlignedAllocator<Type>::deallocate( Pointer ptr, size_t numObjects )
+inline void AlignedAllocator<Type>::deallocate( Pointer ptr, size_t numObjects ) noexcept
 {
    UNUSED_PARAMETER( numObjects );
 
@@ -298,16 +300,17 @@ inline void AlignedAllocator<Type>::deallocate( Pointer ptr, size_t numObjects )
 /*!\brief Constructs an object of type \a Type at the specified memory location.
 //
 // \param ptr Pointer to the allocated, uninitialized storage.
-// \param value The initialization value.
+// \param args The constructor arguments.
 // \return void
 //
 // This function constructs an object of type \a Type in the allocated, uninitialized storage
 // pointed to by \a ptr. This construction is performed via placement-new.
 */
 template< typename Type >
-inline void AlignedAllocator<Type>::construct( Pointer ptr, ConstReference value )
+template< typename... Args >
+inline void AlignedAllocator<Type>::construct( Pointer ptr, Args&&... args )
 {
-   ::new( ptr ) Type( value );
+   ::new( ptr ) Type( std::forward<Args>( args )... );
 }
 //*************************************************************************************************
 

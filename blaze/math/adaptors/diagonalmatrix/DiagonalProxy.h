@@ -3,7 +3,7 @@
 //  \file blaze/math/adaptors/diagonalmatrix/DiagonalProxy.h
 //  \brief Header file for the DiagonalProxy class
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -140,6 +140,13 @@ class DiagonalProxy
    template< typename T > inline DiagonalProxy& operator*=( const T& value );
    template< typename T > inline DiagonalProxy& operator/=( const T& value );
    template< typename T > inline DiagonalProxy& operator%=( const T& value );
+   //@}
+   //**********************************************************************************************
+
+   //**Access operators****************************************************************************
+   /*!\name Access operators */
+   //@{
+   inline const DiagonalProxy* operator->() const noexcept;
    //@}
    //**********************************************************************************************
 
@@ -452,6 +459,27 @@ inline DiagonalProxy<MT>& DiagonalProxy<MT>::operator%=( const T& value )
    value_ %= value;
 
    return *this;
+}
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ACCESS OPERATORS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*!\brief Direct access to the accessed matrix element.
+//
+// \return Pointer to the accessed matrix element.
+*/
+template< typename MT >  // Type of the adapted matrix
+inline const DiagonalProxy<MT>* DiagonalProxy<MT>::operator->() const noexcept
+{
+   return this;
 }
 //*************************************************************************************************
 

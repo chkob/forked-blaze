@@ -3,7 +3,7 @@
 //  \file blaze/math/adaptors/lowermatrix/LowerProxy.h
 //  \brief Header file for the LowerProxy class
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -143,6 +143,13 @@ class LowerProxy
    //@}
    //**********************************************************************************************
 
+   //**Access operators****************************************************************************
+   /*!\name Access operators */
+   //@{
+   inline const LowerProxy* operator->() const noexcept;
+   //@}
+   //**********************************************************************************************
+
    //**Utility functions***************************************************************************
    /*!\name Utility functions */
    //@{
@@ -228,7 +235,7 @@ inline LowerProxy<MT>::LowerProxy( const LowerProxy& lp )
 
 //=================================================================================================
 //
-//  OPERATORS
+//  ASSIGNMENT OPERATORS
 //
 //=================================================================================================
 
@@ -452,6 +459,27 @@ inline const LowerProxy<MT>& LowerProxy<MT>::operator%=( const T& value ) const
    value_ %= value;
 
    return *this;
+}
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  ACCESS OPERATORS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*!\brief Direct access to the accessed matrix element.
+//
+// \return Pointer to the accessed matrix element.
+*/
+template< typename MT >  // Type of the adapted matrix
+inline const LowerProxy<MT>* LowerProxy<MT>::operator->() const noexcept
+{
+   return this;
 }
 //*************************************************************************************************
 

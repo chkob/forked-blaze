@@ -3,7 +3,7 @@
 //  \file src/mathtest/band/DenseTest.cpp
 //  \brief Source file for the Band dense test
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -85,6 +85,7 @@ DenseTest::DenseTest()
    testIsDefault();
    testIsSame();
    testSubvector();
+   testElements();
 }
 //*************************************************************************************************
 
@@ -5232,14 +5233,14 @@ void DenseTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st lower band via Iterator
+      // Counting the number of elements in 1st lower band via Iterator (end-begin)
       {
-         test_ = "Row-major Iterator subtraction";
+         test_ = "Row-major Iterator subtraction (end-begin)";
 
          BT band1 = blaze::band( mat_, -1L );
-         const size_t number( end( band1 ) - begin( band1 ) );
+         const ptrdiff_t number( end( band1 ) - begin( band1 ) );
 
-         if( number != 3UL ) {
+         if( number != 3L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -5250,20 +5251,56 @@ void DenseTest::testIterator()
          }
       }
 
-      // Counting the number of elements on the digaonal via ConstIterator
+      // Counting the number of elements in 1st lower band via Iterator (begin-end)
       {
-         test_ = "Row-major ConstIterator subtraction";
+         test_ = "Row-major Iterator subtraction (begin-end)";
+
+         BT band1 = blaze::band( mat_, -1L );
+         const ptrdiff_t number( begin( band1 ) - end( band1 ) );
+
+         if( number != -3L ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid number of elements detected\n"
+                << " Details:\n"
+                << "   Number of elements         : " << number << "\n"
+                << "   Expected number of elements: -3\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // Counting the number of elements on the digaonal via ConstIterator (end-begin)
+      {
+         test_ = "Row-major ConstIterator subtraction (end-begin)";
 
          BT band0 = blaze::band( mat_, 0L );
-         const size_t number( cend( band0 ) - cbegin( band0 ) );
+         const ptrdiff_t number( cend( band0 ) - cbegin( band0 ) );
 
-         if( number != 4UL ) {
+         if( number != 4L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
                 << " Details:\n"
                 << "   Number of elements         : " << number << "\n"
                 << "   Expected number of elements: 4\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // Counting the number of elements on the digaonal via ConstIterator (begin-end)
+      {
+         test_ = "Row-major ConstIterator subtraction (begin-end)";
+
+         BT band0 = blaze::band( mat_, 0L );
+         const ptrdiff_t number( cbegin( band0 ) - cend( band0 ) );
+
+         if( number != -4L ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid number of elements detected\n"
+                << " Details:\n"
+                << "   Number of elements         : " << number << "\n"
+                << "   Expected number of elements: -4\n";
             throw std::runtime_error( oss.str() );
          }
       }
@@ -5606,14 +5643,14 @@ void DenseTest::testIterator()
          }
       }
 
-      // Counting the number of elements in 1st upper band via Iterator
+      // Counting the number of elements in 1st upper band via Iterator (end-begin)
       {
-         test_ = "Column-major Iterator subtraction";
+         test_ = "Column-major Iterator subtraction (end-begin)";
 
          OBT band1 = blaze::band( tmat_, 1L );
-         const size_t number( end( band1 ) - begin( band1 ) );
+         const ptrdiff_t number( end( band1 ) - begin( band1 ) );
 
-         if( number != 3UL ) {
+         if( number != 3L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
@@ -5624,20 +5661,56 @@ void DenseTest::testIterator()
          }
       }
 
-      // Counting the number of elements on the diagonal via ConstIterator
+      // Counting the number of elements in 1st upper band via Iterator (begin-end)
       {
-         test_ = "Column-major ConstIterator subtraction";
+         test_ = "Column-major Iterator subtraction (begin-end)";
+
+         OBT band1 = blaze::band( tmat_, 1L );
+         const ptrdiff_t number( begin( band1 ) - end( band1 ) );
+
+         if( number != -3L ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid number of elements detected\n"
+                << " Details:\n"
+                << "   Number of elements         : " << number << "\n"
+                << "   Expected number of elements: -3\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // Counting the number of elements on the diagonal via ConstIterator (end-begin)
+      {
+         test_ = "Column-major ConstIterator subtraction (end-begin)";
 
          OBT band0 = blaze::band( tmat_, 0L );
-         const size_t number( cend( band0 ) - cbegin( band0 ) );
+         const ptrdiff_t number( cend( band0 ) - cbegin( band0 ) );
 
-         if( number != 4UL ) {
+         if( number != 4L ) {
             std::ostringstream oss;
             oss << " Test: " << test_ << "\n"
                 << " Error: Invalid number of elements detected\n"
                 << " Details:\n"
                 << "   Number of elements         : " << number << "\n"
                 << "   Expected number of elements: 4\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      // Counting the number of elements on the diagonal via ConstIterator (begin-end)
+      {
+         test_ = "Column-major ConstIterator subtraction (begin-end)";
+
+         OBT band0 = blaze::band( tmat_, 0L );
+         const ptrdiff_t number( cbegin( band0 ) - cend( band0 ) );
+
+         if( number != -4L ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Invalid number of elements detected\n"
+                << " Details:\n"
+                << "   Number of elements         : " << number << "\n"
+                << "   Expected number of elements: -4\n";
             throw std::runtime_error( oss.str() );
          }
       }
@@ -7460,28 +7533,56 @@ void DenseTest::testSubvector()
 
       initialize();
 
-      BT   band1 = blaze::band( mat_, 1L );
-      auto sv    = blaze::subvector( band1, 0UL, 4UL );
+      {
+         BT   band1 = blaze::band( mat_, 1L );
+         auto sv    = blaze::subvector( band1, 0UL, 4UL );
 
-      if( sv[1] != 4 ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Subscript operator access failed\n"
-             << " Details:\n"
-             << "   Result: " << sv[4] << "\n"
-             << "   Expected result: 4\n";
-         throw std::runtime_error( oss.str() );
+         if( sv[0] != 0 || sv[1] != 4 || sv[2] != 5 || sv[3] != -6 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result:\n" << sv << "\n"
+                << "   Expected result:\n( 0 4 5 -6 )\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *sv.begin() != 0 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *sv.begin() << "\n"
+                << "   Expected result: 0\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( *sv.begin() != 0 ) {
+      try {
+         BT   band1 = blaze::band( mat_, 1L );
+         auto sv    = blaze::subvector( band1, 4UL, 4UL );
+
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Iterator access failed\n"
+             << " Error: Setup of out-of-bounds subvector succeeded\n"
              << " Details:\n"
-             << "   Result: " << *sv.begin() << "\n"
-             << "   Expected result: 0\n";
+             << "   Result:\n" << sv << "\n";
          throw std::runtime_error( oss.str() );
       }
+      catch( std::invalid_argument& ) {}
+
+      try {
+         BT   band1 = blaze::band( mat_, 1L );
+         auto sv    = blaze::subvector( band1, 0UL, 5UL );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds subvector succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << sv << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
    }
 
 
@@ -7494,28 +7595,167 @@ void DenseTest::testSubvector()
 
       initialize();
 
-      OBT  band1 = blaze::band( tmat_, -1L );
-      auto sv    = blaze::subvector( band1, 0UL, 4UL );
+      {
+         OBT  band1 = blaze::band( tmat_, -1L );
+         auto sv    = blaze::subvector( band1, 0UL, 4UL );
 
-      if( sv[1] != 4 ) {
-         std::ostringstream oss;
-         oss << " Test: " << test_ << "\n"
-             << " Error: Subscript operator access failed\n"
-             << " Details:\n"
-             << "   Result: " << sv[1] << "\n"
-             << "   Expected result: 4\n";
-         throw std::runtime_error( oss.str() );
+         if( sv[0] != 0 || sv[1] != 4 || sv[2] != 5 || sv[3] != -6 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result:\n" << sv << "\n"
+                << "   Expected result:\n( 0 4 5 -6 )\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *sv.begin() != 0 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *sv.begin() << "\n"
+                << "   Expected result: 0\n";
+            throw std::runtime_error( oss.str() );
+         }
       }
 
-      if( *sv.begin() != 0 ) {
+      try {
+         OBT  band1 = blaze::band( tmat_, -1L );
+         auto sv    = blaze::subvector( band1, 4UL, 4UL );
+
          std::ostringstream oss;
          oss << " Test: " << test_ << "\n"
-             << " Error: Iterator access failed\n"
+             << " Error: Setup of out-of-bounds subvector succeeded\n"
              << " Details:\n"
-             << "   Result: " << *sv.begin() << "\n"
-             << "   Expected result: 0\n";
+             << "   Result:\n" << sv << "\n";
          throw std::runtime_error( oss.str() );
       }
+      catch( std::invalid_argument& ) {}
+
+      try {
+         OBT  band1 = blaze::band( tmat_, -1L );
+         auto sv    = blaze::subvector( band1, 0UL, 5UL );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds subvector succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << sv << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
+   }
+}
+//*************************************************************************************************
+
+
+//*************************************************************************************************
+/*!\brief Test of the \c elements() function with the Band specialization.
+//
+// \return void
+// \exception std::runtime_error Error detected.
+//
+// This function performs a test of the \c elements() function used with the Band specialization.
+// In case an error is detected, a \a std::runtime_error exception is thrown.
+*/
+void DenseTest::testElements()
+{
+   //=====================================================================================
+   // Row-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Row-major elements() function";
+
+      initialize();
+
+      {
+         BT   band1 = blaze::band( mat_, 1L );
+         auto e     = blaze::elements( band1, { 3UL, 2UL } );
+
+         if( e[0] != -6 || e[1] != 5 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result:\n" << e << "\n"
+                << "   Expected result:\n( -6 5 )\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *e.begin() != -6 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *e.begin() << "\n"
+                << "   Expected result: -6\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      try {
+         BT   band1 = blaze::band( mat_, 1L );
+         auto e     = blaze::elements( band1, { 4UL } );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds element selection succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << e << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
+   }
+
+
+   //=====================================================================================
+   // Column-major matrix tests
+   //=====================================================================================
+
+   {
+      test_ = "Column-major elements() function";
+
+      initialize();
+
+      {
+         OBT  band1 = blaze::band( tmat_, -1L );
+         auto e     = blaze::elements( band1, { 3UL, 2UL } );
+
+         if( e[0] != -6 || e[1] != 5 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Subscript operator access failed\n"
+                << " Details:\n"
+                << "   Result:\n" << e << "\n"
+                << "   Expected result:\n( -6 5 )\n";
+            throw std::runtime_error( oss.str() );
+         }
+
+         if( *e.begin() != -6 ) {
+            std::ostringstream oss;
+            oss << " Test: " << test_ << "\n"
+                << " Error: Iterator access failed\n"
+                << " Details:\n"
+                << "   Result: " << *e.begin() << "\n"
+                << "   Expected result: -6\n";
+            throw std::runtime_error( oss.str() );
+         }
+      }
+
+      try {
+         OBT  band1 = blaze::band( tmat_, -1L );
+         auto e     = blaze::elements( band1, { 4UL } );
+
+         std::ostringstream oss;
+         oss << " Test: " << test_ << "\n"
+             << " Error: Setup of out-of-bounds element selection succeeded\n"
+             << " Details:\n"
+             << "   Result:\n" << e << "\n";
+         throw std::runtime_error( oss.str() );
+      }
+      catch( std::invalid_argument& ) {}
    }
 }
 //*************************************************************************************************

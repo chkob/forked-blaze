@@ -3,7 +3,7 @@
 //  \file blaze/util/mpl/Or.h
 //  \brief Header file for the Or class template
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -54,10 +54,10 @@ namespace blaze {
 //=================================================================================================
 
 //*************************************************************************************************
-/*!\brief Compile time logical or evaluation.
+/*!\brief Compile time logical 'or' evaluation.
 // \ingroup mpl
 //
-// The Or alias declaration performs at compile time a logical or ('&&') evaluation of at least
+// The Or alias declaration performs at compile time a logical 'or' ('||') evaluation of at least
 // two compile time conditions:
 
    \code

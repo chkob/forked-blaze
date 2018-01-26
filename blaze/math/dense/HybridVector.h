@@ -3,7 +3,7 @@
 //  \file blaze/math/dense/HybridVector.h
 //  \brief Header file for the HybridVector class template
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //
@@ -66,6 +66,7 @@
 #include <blaze/math/typetraits/HasSIMDSub.h>
 #include <blaze/math/typetraits/HighType.h>
 #include <blaze/math/typetraits/IsAligned.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsPadded.h>
 #include <blaze/math/typetraits/IsResizable.h>
 #include <blaze/math/typetraits/IsSIMDCombinable.h>
@@ -290,12 +291,6 @@ class HybridVector
    template< typename VT > inline HybridVector& operator*=( const Vector<VT,TF>& rhs );
    template< typename VT > inline HybridVector& operator/=( const DenseVector<VT,TF>& rhs );
    template< typename VT > inline HybridVector& operator%=( const Vector<VT,TF>& rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, HybridVector >& operator*=( Other rhs );
-
-   template< typename Other >
-   inline EnableIf_<IsNumeric<Other>, HybridVector >& operator/=( Other rhs );
    //@}
    //**********************************************************************************************
 
@@ -1383,60 +1378,6 @@ inline HybridVector<Type,N,TF>& HybridVector<Type,N,TF>::operator%=( const Vecto
 
    const CrossType tmp( *this % (~rhs) );
    assign( *this, tmp );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Multiplication assignment operator for the multiplication between a vector and
-//        a scalar value (\f$ \vec{a}*=s \f$).
-//
-// \param rhs The right-hand side scalar value for the multiplication.
-// \return Reference to the vector.
-*/
-template< typename Type     // Data type of the vector
-        , size_t N          // Number of elements
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, HybridVector<Type,N,TF> >&
-   HybridVector<Type,N,TF>::operator*=( Other rhs )
-{
-   using blaze::assign;
-
-   assign( *this, (*this) * rhs );
-
-   BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
-
-   return *this;
-}
-//*************************************************************************************************
-
-
-//*************************************************************************************************
-/*!\brief Division assignment operator for the division of a vector by a scalar value
-//        (\f$ \vec{a}/=s \f$).
-//
-// \param rhs The right-hand side scalar value for the division.
-// \return Reference to the vector.
-//
-// \note A division by zero is only checked by an user assert.
-*/
-template< typename Type     // Data type of the vector
-        , size_t N          // Number of elements
-        , bool TF >         // Transpose flag
-template< typename Other >  // Data type of the right-hand side scalar
-inline EnableIf_<IsNumeric<Other>, HybridVector<Type,N,TF> >&
-   HybridVector<Type,N,TF>::operator/=( Other rhs )
-{
-   using blaze::assign;
-
-   BLAZE_USER_ASSERT( rhs != Other(0), "Division by zero detected" );
-
-   assign( *this, (*this) / rhs );
 
    BLAZE_INTERNAL_ASSERT( isIntact(), "Invariant violation detected" );
 
@@ -2810,6 +2751,24 @@ struct IsAligned< HybridVector<T,N,TF> >
 
 //=================================================================================================
 //
+//  ISCONTIGUOUS SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename T, size_t N, bool TF >
+struct IsContiguous< HybridVector<T,N,TF> >
+   : public TrueType
+{};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
 //  ISPADDED SPECIALIZATIONS
 //
 //=================================================================================================
@@ -3146,6 +3105,31 @@ template< typename T1, size_t N, bool TF, typename T2 >
 struct LowType< HybridVector<T1,N,TF>, HybridVector<T2,N,TF> >
 {
    using Type = StaticVector< typename LowType<T1,T2>::Type, N, TF >;
+};
+/*! \endcond */
+//*************************************************************************************************
+
+
+
+
+//=================================================================================================
+//
+//  SUBVECTORTRAIT SPECIALIZATIONS
+//
+//=================================================================================================
+
+//*************************************************************************************************
+/*! \cond BLAZE_INTERNAL */
+template< typename T, size_t N1, bool TF, size_t I, size_t N2 >
+struct SubvectorTrait< HybridVector<T,N1,TF>, I, N2 >
+{
+   using Type = StaticVector<T,N2,TF>;
+};
+
+template< typename T, size_t N, bool TF >
+struct SubvectorTrait< HybridVector<T,N,TF> >
+{
+   using Type = HybridVector<T,N,TF>;
 };
 /*! \endcond */
 //*************************************************************************************************

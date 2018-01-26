@@ -3,7 +3,7 @@
 //  \file blaze/math/TypeTraits.h
 //  \brief Header file for all type traits
 //
-//  Copyright (C) 2012-2017 Klaus Iglberger - All Rights Reserved
+//  Copyright (C) 2012-2018 Klaus Iglberger - All Rights Reserved
 //
 //  This file is part of the Blaze library. You can redistribute it and/or modify it under
 //  the terms of the New (Revised) BSD License. Redistribution and use in source and binary
@@ -68,6 +68,7 @@
 #include <blaze/math/typetraits/HasSIMDExp2.h>
 #include <blaze/math/typetraits/HasSIMDExp10.h>
 #include <blaze/math/typetraits/HasSIMDFloor.h>
+#include <blaze/math/typetraits/HasSIMDHypot.h>
 #include <blaze/math/typetraits/HasSIMDInvCbrt.h>
 #include <blaze/math/typetraits/HasSIMDInvSqrt.h>
 #include <blaze/math/typetraits/HasSIMDLog.h>
@@ -95,8 +96,10 @@
 #include <blaze/math/typetraits/IsBLASCompatible.h>
 #include <blaze/math/typetraits/IsColumn.h>
 #include <blaze/math/typetraits/IsColumnMajorMatrix.h>
+#include <blaze/math/typetraits/IsColumns.h>
 #include <blaze/math/typetraits/IsColumnVector.h>
 #include <blaze/math/typetraits/IsComputation.h>
+#include <blaze/math/typetraits/IsContiguous.h>
 #include <blaze/math/typetraits/IsCrossExpr.h>
 #include <blaze/math/typetraits/IsCustom.h>
 #include <blaze/math/typetraits/IsDeclaration.h>
@@ -110,6 +113,7 @@
 #include <blaze/math/typetraits/IsDenseVector.h>
 #include <blaze/math/typetraits/IsDiagonal.h>
 #include <blaze/math/typetraits/IsDivExpr.h>
+#include <blaze/math/typetraits/IsElements.h>
 #include <blaze/math/typetraits/IsEvalExpr.h>
 #include <blaze/math/typetraits/IsExpression.h>
 #include <blaze/math/typetraits/IsGeneral.h>
@@ -142,6 +146,7 @@
 #include <blaze/math/typetraits/IsRestricted.h>
 #include <blaze/math/typetraits/IsRow.h>
 #include <blaze/math/typetraits/IsRowMajorMatrix.h>
+#include <blaze/math/typetraits/IsRows.h>
 #include <blaze/math/typetraits/IsRowVector.h>
 #include <blaze/math/typetraits/IsSchurExpr.h>
 #include <blaze/math/typetraits/IsSerialExpr.h>
